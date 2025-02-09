@@ -1,6 +1,4 @@
-    import { Roboto_400Regular, Roboto_700Bold } from "@expo-google-fonts/roboto";
-    import { Inter_400Regular, Inter_500Medium, Inter_800ExtraBold } from "@expo-google-fonts/inter";
-    import { Poppins_700Bold, Poppins_600SemiBold, Poppins_500Medium } from "@expo-google-fonts/poppins";
+
 
 
     export default {
@@ -14,9 +12,9 @@
             
         },
         fonts:{
-            Titulos: Inter_800ExtraBold,
-            buttons: Poppins_500Medium,
-            Subtituloslight:Inter_500Medium,
-            Subtitulos:Poppins_700Bold
+            Titulos: "Inter_800ExtraBold",
+            buttons: "Poppins_500Medium",
+            Subtituloslight:"Inter_500Medium",
+            Subtitulos: "Poppins_700Bold"
         }
     }
