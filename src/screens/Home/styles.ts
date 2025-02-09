@@ -12,4 +12,5 @@ export const Container = styled.View`
 export const Title = styled.Text`
   font-size: 20px;
   font-style: italic;
+  font-family: ${(props: { theme: DefaultTheme }) => props.theme.fonts.Titulos};
 `;
