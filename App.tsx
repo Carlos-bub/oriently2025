@@ -1,5 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider } from 'styled-components/native';
+import * as SplashScreen from 'expo-splash-screen';
+import {useEffect} from 'react';
+
 
 //Fontes
 import { useFonts, Roboto_400Regular, Roboto_700Bold } from '@expo-google-fonts/roboto';
@@ -12,8 +15,10 @@ import { Loading } from './src/components/Loading';
 
 import theme from './src/global/styles/theme';
 
+SplashScreen.preventAutoHideAsync();
+
 export default function App() {
-  const [fontsLoaded] = useFonts({
+  const [loaded, error] = useFonts({
     Roboto_400Regular,
     Roboto_700Bold,
     Inter_400Regular,
@@ -23,10 +28,16 @@ export default function App() {
     Poppins_600SemiBold
   });
 
-  if (!fontsLoaded) {
-    return <Loading/>; 
-  }
+  useEffect(() => {
+    if (loaded || error) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded, error]);
 
+  if (!loaded && !error) {
+    return<Loading/>;
+  }
+ 
   return (
     <ThemeProvider theme={theme}>
       <StatusBar style="auto" />
