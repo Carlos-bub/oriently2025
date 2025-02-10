@@ -1,6 +1,7 @@
 // styles.ts
 import styled from 'styled-components/native';
 import { DefaultTheme } from 'styled-components/native';
+import theme from '../../global/styles/theme';
 
 export const Container = styled.View`
   flex: 1;
@@ -10,7 +11,6 @@ export const Container = styled.View`
 `;
 
 export const Title = styled.Text`
-  font-size: 20px;
-  font-style: italic;
-  font-family: ${(props: { theme: DefaultTheme }) => props.theme.fonts.Titulos};
+  font-size: 30px;
+  font-family: ${theme.fonts.Titulos};
 `;

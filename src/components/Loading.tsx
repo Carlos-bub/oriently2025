@@ -8,7 +8,7 @@ export function Loading () {
         justifyContent: 'center',
         alignContent: 'center'   
       }}> 
-      View
+      
       <ActivityIndicator
         color={theme.colors.primary}
         size={"large"}

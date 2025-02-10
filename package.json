@@ -21,7 +21,8 @@
     "save": "^2.9.0",
     "styled-components": "^6.1.15",
     "react-native-web": "~0.19.13",
-    "@expo/metro-runtime": "~4.0.1"
+    "@expo/metro-runtime": "~4.0.1",
+    "expo-splash-screen": "~0.29.21"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
