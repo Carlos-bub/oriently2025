@@ -64,3 +64,43 @@ export const Container = styled.View`
     color: ${(props: { theme: DefaultTheme }) => props.theme.colors.background};
     font-size: ${ RFValue(30)}px;
   `;
+
+  export const TextWrapper = styled.View`
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: ${RFValue(60)}px;
+    padding: 0 ${RFValue(20)}px;
+  `
+  export const TitleHome = styled.Text`
+    color: ${(props: { theme: DefaultTheme }) => props.theme.colors.text};
+    font-family: ${theme.fonts.Titulos};
+    font-size: ${ RFValue(30)}px;
+    margin-bottom: ${RFValue(-5)}px;
+  ` 
+  export const TitleHome2 = styled.Text`
+  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.text};
+  font-family: ${theme.fonts.Titulos};
+  font-size: ${ RFValue(30)}px;
+  margin-bottom: ${RFValue(5)}px;
+  `
+  export const Subtitle = styled.Text`
+  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.text_light};
+  font-family: ${theme.fonts.Titulos};
+  font-size: ${ RFValue(11)}px;
+  `
+  export const Subtitle2 = styled.Text`
+  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.text_light};
+  font-family: ${theme.fonts.Titulos};
+  font-size: ${ RFValue(11)}px;
+  `
+
+  export const ButtonWrapper = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  gap: ${RFValue(16)}px;
+  margin-top: ${RFValue(-170)}px;
+  
+  `;

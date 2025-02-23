@@ -5,7 +5,8 @@
             date: '#0057BA',
             text: '#000000',
             text_light: '#969696',
-            boxreserv: '#D9D9D9'
+            boxreserv: '#D9D9D9',
+            boxprofile: '#EBF1FE'
             
         },
         fonts:{
