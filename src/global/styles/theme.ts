@@ -6,9 +6,10 @@
             text: '#000000',
             text_light: '#969696',
             boxreserv: '#D9D9D9',
-            boxprofile: '#EBF1FE'
-            
+            boxprofile: '#EBF1FE',
+            cancel: '#FF0000'
         },
+        
         fonts:{
             Titulos: "Inter_800ExtraBold",
             buttons: "Poppins_500Medium",

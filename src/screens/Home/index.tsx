@@ -23,8 +23,14 @@ import { Button } from '../../components/Button';
 
 export function Home() {
 
-  const navigation = useNavigation<any>(); // Hook para navegação
-
+  const navigation = useNavigation<any>(); 
+  
+  const handleLogout = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }], 
+    });
+  };
   return (
     <Container>
       <Header> 
@@ -42,10 +48,9 @@ export function Home() {
               </Hello>
             </HeaderTextWrapper>
           </UserInfo>
-          <LogoutButton>
-            <LogoutIcon 
-              name = 'logout'>
-              
+          <LogoutButton onPress={handleLogout}>
+            <LogoutIcon name = 'logout'>
+
             </LogoutIcon>
           </LogoutButton>
         </UserWrapper>
@@ -62,7 +67,7 @@ export function Home() {
         Fique livre das complicações e 
         </Subtitle>
         <Subtitle2>
-        organize Seus tudo no seu tempo.
+        organize tudo no seu tempo.
         </Subtitle2>
       </TextWrapper>
 
