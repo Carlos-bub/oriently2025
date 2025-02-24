@@ -1,7 +1,9 @@
 import React from "react";
 import { Container, Logo, Title, Buttons, ButtonText, Icon, FooterText } from "./styles";
+import { useNavigation } from "@react-navigation/native";
 
-const LoginScreen: React.FC = () => {
+export function LoginScreen() {
+  const navigation = useNavigation();
   return (
     <Container>
       
@@ -10,14 +12,14 @@ const LoginScreen: React.FC = () => {
         Faça Login para Começar
       </Title>
 
-      <Buttons bgColor="#ffffff">
+      <Buttons bgColor="#ffffff" onPress={() => navigation.navigate("AppRoutes")}>
         <Icon source={require("../../../assets/google.png")} />
         <ButtonText color="#000">
           Continuar com Google
         </ButtonText>
       </Buttons>
 
-      <Buttons bgColor="#ffffff">
+      <Buttons bgColor="#ffffff" onPress={() => navigation.navigate("AppRoutes")}>
         <Icon source={require("../../../assets/apple-logo.png")} resizeMode="contain" />
         <ButtonText color="#ffffff">
           Continuar com Apple

@@ -3,7 +3,7 @@ import styled from 'styled-components/native';
 import { DefaultTheme } from 'styled-components/native';
 import theme from '../../global/styles/theme';
 import { RFPercentage, RFValue } from 'react-native-responsive-fontsize';
-
+import { TouchableOpacity } from 'react-native';
 import { MaterialIcons  } from '@expo/vector-icons';
 import { FontAwesome  } from '@expo/vector-icons';
 import { getStatusBarHeight } from 'react-native-iphone-x-helper';
@@ -58,7 +58,9 @@ export const Container = styled.View`
     line-height: ${ RFValue(24)}px;
   `;
 
-  export const LogoutButton = styled.View``;
+export const LogoutButton = styled(TouchableOpacity)`
+
+`;
 
   export const LogoutIcon = styled(MaterialIcons)`
     color: ${(props: { theme: DefaultTheme }) => props.theme.colors.background};

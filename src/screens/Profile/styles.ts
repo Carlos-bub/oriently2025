@@ -28,13 +28,13 @@ export const Subtitle = styled.Text`
 `;
 
 export const DateBox = styled.View`
-width: ${RFValue(130)}px;
+  width: ${RFValue(160)}px;
   flex-direction: row;
   align-items: center;
   background-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.primary};
   padding: ${RFValue(10)}px;
   border-radius: ${RFValue(8)}px;
-  margin-top: ${RFValue(30)}px;
+  margin-bottom: ${RFValue(15)}px;
 `;
 
 export const IconBox = styled( FontAwesome )`
@@ -53,7 +53,7 @@ export const ScheduleCard = styled.View`
   background-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.boxprofile};
   padding: ${RFValue(15)}px;
   border-radius: ${RFValue(10)}px;
-  margin-top: ${RFValue(30)}px;
+  margin-bottom: ${RFValue(20)}px;
 `;
 
 export const ScheduleHeader = styled.View`
@@ -70,7 +70,9 @@ export const ScheduleTitle = styled.Text`
 
 export const ScheduleTime = styled.Text`
   font-size: ${RFValue(14)}px;
-  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.text};
+  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.primary};
+  font-weight: bold;
+  margin-right: ${RFValue(5)}px;
 `;
 
 export const ScheduleItem = styled.View`
@@ -92,3 +94,11 @@ export const Divider = styled.View`
   background-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.text_light};
   margin: ${RFValue(10)}px 0;
 `;
+
+export const TimeContainer = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: ${RFValue(5)}px;
+`;
+
+export { FontAwesome };
