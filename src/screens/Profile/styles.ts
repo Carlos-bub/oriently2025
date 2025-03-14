@@ -6,7 +6,8 @@ import { FontAwesome } from "@expo/vector-icons";
 
 export const Container = styled.View`
   flex: 1;
-  background-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.background};
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.background};
   padding: ${RFValue(20)}px;
 `;
 
@@ -31,16 +32,17 @@ export const DateBox = styled.View`
   width: ${RFValue(160)}px;
   flex-direction: row;
   align-items: center;
-  background-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.primary};
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.primary};
   padding: ${RFValue(10)}px;
   border-radius: ${RFValue(8)}px;
   margin-bottom: ${RFValue(15)}px;
 `;
 
-export const IconBox = styled( FontAwesome )`
+export const IconBox = styled(FontAwesome)`
   margin-right: ${RFValue(10)}px;
   color: ${(props: { theme: DefaultTheme }) => props.theme.colors.background};
-  font-size: ${ RFValue(16)}px;
+  font-size: ${RFValue(16)}px;
 `;
 
 export const DateText = styled.Text`
@@ -50,7 +52,8 @@ export const DateText = styled.Text`
 `;
 
 export const ScheduleCard = styled.View`
-  background-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.boxprofile};
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.boxprofile};
   padding: ${RFValue(15)}px;
   border-radius: ${RFValue(10)}px;
   margin-bottom: ${RFValue(20)}px;
@@ -91,7 +94,8 @@ export const RemoveButton = styled.Text`
 
 export const Divider = styled.View`
   height: 1px;
-  background-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.text_light};
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.text_light};
   margin: ${RFValue(10)}px 0;
 `;
 
@@ -99,6 +103,10 @@ export const TimeContainer = styled.View`
   flex-direction: row;
   align-items: center;
   gap: ${RFValue(5)}px;
+`;
+
+export const Alert = styled.Text`
+  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.cancel};
 `;
 
 export { FontAwesome };
