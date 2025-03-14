@@ -7,7 +7,8 @@ export const Container = styled.View`
   flex: 1;
   align-items: center;
   justify-content: center;
-  background-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.background};
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.background};
   padding: 20px;
 `;
 
@@ -33,21 +34,21 @@ export const Buttons = styled.TouchableOpacity<{ bgColor?: string }>`
   justify-content: center;
   border-radius: ${RFValue(8)}px;
   margin-bottom: ${RFValue(10)}px;
-  background-color: ${(props: { bgColor: any; }) => props.bgColor || "transparent"};
+  background-color: ${(props: { bgColor: any }) =>
+    props.bgColor || "transparent"};
 
   shadow-color: #000;
   shadow-offset: 0px 4px;
   shadow-opacity: 0.2;
   shadow-radius: 4px;
 
-  
   elevation: 5;
 `;
 
 export const ButtonText = styled.Text`
   font-size: ${RFValue(14)}px;
   font-family: ${theme.fonts.Titulos};
-  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.text};;
+  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.text};
   margin-left: ${RFValue(10)}px;
 `;
 

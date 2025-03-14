@@ -1,41 +1,56 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList } from 'react-native';
-import { Calendar } from 'react-native-calendars';
-import { format } from 'date-fns';
+import React, { useState } from "react";
+import { View, Text, FlatList } from "react-native";
+import { Calendar } from "react-native-calendars";
+import { format } from "date-fns";
 
-import { 
-  Container, 
-  ScheduleList, 
-  ScheduleItem, 
-  ScheduleText, 
-  ScheduleListWrapper, 
-  Title, 
-  TitleWrapper, 
+import {
+  Container,
+  ScheduleList,
+  ScheduleItem,
+  ScheduleText,
+  ScheduleListWrapper,
+  Title,
+  TitleWrapper,
   CalendarWrapper,
   ModalOverlay,
   ModalContent,
   ModalText,
   ModalButtonContainer,
   ModalButton,
-  ModalButtonText 
-} from './styles';
-import { Modal, TouchableOpacity } from 'react-native';
+  ModalButtonText,
+} from "./styles";
+import { Modal, TouchableOpacity } from "react-native";
 
 export function Schedule() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedHour, setSelectedHour] = useState<string | null>(null);;
+  const [selectedHour, setSelectedHour] = useState<string | null>(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
 
   const handleConfirm = () => {
     if (selectedDate && selectedHour) {
-      
-      console.log('Reserva confirmada:', selectedDate, selectedHour);
+      console.log("Reserva confirmada:", selectedDate, selectedHour);
       setShowConfirmationModal(false);
-      setSelectedHour(null); 
+      setSelectedHour(null);
     }
   };
 
-  const hours = ['15:00', '16:00', '18:00', '15:00', '16:00', '18:00', '15:00', '16:00', '18:00'];
+  const hours = [
+    "15:00",
+    "16:00",
+    "18:00",
+    "15:00",
+    "16:00",
+    "18:00",
+    "15:00",
+    "16:00",
+    "18:00",
+    "15:00",
+    "16:00",
+    "18:00",
+    "15:00",
+    "16:00",
+    "18:00",
+  ];
 
   function handleDateSelect(day: string) {
     setSelectedDate(day);
@@ -44,42 +59,57 @@ export function Schedule() {
   return (
     <Container>
       <TitleWrapper>
-        <Title>
-          Selecione uma data
-        </Title>
+        <Title>Selecione uma data</Title>
       </TitleWrapper>
       <CalendarWrapper>
         <Calendar
-          onDayPress={(day: { dateString: string; }) => handleDateSelect(day.dateString)}
+          onDayPress={(day: { dateString: string }) =>
+            handleDateSelect(day.dateString)
+          }
           markedDates={{
-            [selectedDate || '']: { selected: true, selectedColor: '#6200ee' },
+            [selectedDate || ""]: { selected: true, selectedColor: "#6200ee" },
           }}
         />
       </CalendarWrapper>
 
       {selectedDate && (
         <>
-          <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 20, color: '#258BFF' }}>
-            Horários para {format(new Date(selectedDate), 'dd/MM/yyyy')}
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "bold",
+              marginTop: 20,
+              color: "#258BFF",
+            }}
+          >
+            {`Horários para ${format(
+              new Date(selectedDate + "T00:00:00"),
+              "dd/MM/yyyy"
+            )}`}
           </Text>
-          <ScheduleListWrapper>
-            <ScheduleList
-              data={hours}
-              keyExtractor={(item: any, index: any) => String(index)}
-              numColumns={3} 
-              renderItem={({ item }) => (
-                <ScheduleItem
-                isSelected={selectedHour === item}
-                onPress={() => {
-                  setSelectedHour(item);
-                  setShowConfirmationModal(true);
-                }}
-              >
-                <ScheduleText>{item}</ScheduleText>
-                </ScheduleItem>
-              )}
-            />
-         </ScheduleListWrapper>
+
+          <View style={{ flex: 1 }}>
+            {}
+            <ScheduleListWrapper>
+              <ScheduleList
+                data={hours}
+                keyExtractor={(item: any, index: any) => String(index)}
+                numColumns={3}
+                contentContainerStyle={{ paddingBottom: 50 }}
+                renderItem={({ item }) => (
+                  <ScheduleItem
+                    isSelected={selectedHour === item}
+                    onPress={() => {
+                      setSelectedHour(item);
+                      setShowConfirmationModal(true);
+                    }}
+                  >
+                    <ScheduleText>{item}</ScheduleText>
+                  </ScheduleItem>
+                )}
+              />
+            </ScheduleListWrapper>
+          </View>
         </>
       )}
 
@@ -92,15 +122,15 @@ export function Schedule() {
         <ModalOverlay>
           <ModalContent>
             <ModalText>
-              Confirmar reserva para {'\n'}
-              {format(new Date(selectedDate!), 'dd/MM/yyyy')} às {selectedHour}?
+              Confirmar reserva para {"\n"}
+              {format(new Date(selectedDate!), "dd/MM/yyyy")} às {selectedHour}?
             </ModalText>
-            
+
             <ModalButtonContainer>
               <ModalButton isConfirm onPress={handleConfirm}>
                 <ModalButtonText>Confirmar</ModalButtonText>
               </ModalButton>
-              
+
               <ModalButton onPress={() => setShowConfirmationModal(false)}>
                 <ModalButtonText>Cancelar</ModalButtonText>
               </ModalButton>
