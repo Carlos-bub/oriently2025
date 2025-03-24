@@ -1,8 +1,15 @@
-import React, { useState } from "react";
-import { View, Text, FlatList } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import { View, Text, ActivityIndicator, Alert, Linking } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { format } from "date-fns";
-
+import { Modal } from "react-native";
+import { useIsFocused, useFocusEffect } from "@react-navigation/native";
+import {
+  getUserInfo,
+  getEventTypes,
+  getAvailableTimes,
+  scheduleEvent,
+} from "../../services/calendlyService";
 import {
   Container,
   ScheduleList,
@@ -19,42 +26,144 @@ import {
   ModalButton,
   ModalButtonText,
 } from "./styles";
-import { Modal, TouchableOpacity } from "react-native";
 
 export function Schedule() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedHour, setSelectedHour] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [hours, setHours] = useState<string[]>([]);
+  const [userUri, setUserUri] = useState<string | null>(null);
+  const [eventTypeUri, setEventTypeUri] = useState<string | null>(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const isFocused = useIsFocused();
 
-  const handleConfirm = () => {
-    if (selectedDate && selectedHour) {
-      console.log("Reserva confirmada:", selectedDate, selectedHour);
-      setShowConfirmationModal(false);
-      setSelectedHour(null);
+  const resetState = useCallback(() => {
+    setSelectedDate(null);
+    setSelectedHour(null);
+    setHours([]);
+    setShowConfirmationModal(false);
+  }, []);
+
+  // Reseta o estado quando sai da tela
+  useEffect(() => {
+    if (!isFocused) {
+      resetState();
+    }
+  }, [isFocused, resetState]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUserAndEventType = async () => {
+        try {
+          setLoading(true);
+          const user = await getUserInfo();
+          if (user) {
+            setUserUri(user.uri);
+            const types = await getEventTypes(user.uri);
+            if (types && types.length > 0) {
+              setEventTypeUri(types[0].uri);
+            }
+          }
+        } catch (error) {
+          console.error("Erro ao carregar dados:", error);
+          Alert.alert(
+            "Erro",
+            "Não foi possível carregar os dados necessários."
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchUserAndEventType();
+    }, [])
+  );
+
+  useEffect(() => {
+    const fetchAvailableTimes = async () => {
+      if (!selectedDate || !eventTypeUri) return;
+
+      setLoading(true);
+      try {
+        console.log("Buscando horários para:", {
+          eventTypeUri,
+          selectedDate,
+        });
+
+        const availableTimes = await getAvailableTimes(
+          eventTypeUri,
+          selectedDate
+        );
+
+        console.log("Horários disponíveis:", availableTimes);
+        setHours(availableTimes);
+      } catch (error) {
+        console.error("Erro ao buscar horários:", error);
+        Alert.alert("Erro", "Não foi possível carregar os horários.");
+      }
+      setLoading(false);
+    };
+
+    fetchAvailableTimes();
+  }, [selectedDate, eventTypeUri]);
+
+  const handleConfirm = async () => {
+    if (!selectedDate || !selectedHour || !eventTypeUri) {
+      Alert.alert("Erro", "Selecione uma data e horário.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      console.log("Iniciando agendamento:", {
+        eventTypeUri,
+        selectedDate,
+        selectedHour,
+      });
+
+      const result = await scheduleEvent(
+        eventTypeUri,
+        "chln@aluni.ifnmg.edu.br", // Email fixo do usuário
+        selectedDate,
+        selectedHour
+      );
+
+      if (result.success && result.schedulingUrl) {
+        setShowConfirmationModal(false);
+        setSelectedHour(null);
+
+        await Linking.openURL(result.schedulingUrl);
+
+        Alert.alert(
+          "Sucesso",
+          "Por favor, complete seu agendamento no navegador."
+        );
+      } else {
+        Alert.alert("Erro", result.error || "Falha ao criar agendamento.");
+      }
+    } catch (error) {
+      console.error("Erro no agendamento:", error);
+      Alert.alert("Erro", "Não foi possível criar o agendamento.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const hours = [
-    "15:00",
-    "16:00",
-    "18:00",
-    "15:00",
-    "16:00",
-    "18:00",
-    "15:00",
-    "16:00",
-    "18:00",
-    "15:00",
-    "16:00",
-    "18:00",
-    "15:00",
-    "16:00",
-    "18:00",
-  ];
+  const handleDateSelect = (date: any) => {
+    const selectedDateStr = date.dateString;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  function handleDateSelect(day: string) {
-    setSelectedDate(day);
-  }
+    const selectedDateObj = new Date(selectedDateStr);
+    selectedDateObj.setHours(0, 0, 0, 0);
+
+    if (selectedDateObj < today) {
+      Alert.alert("Data inválida", "Por favor, selecione uma data futura.");
+      return;
+    }
+
+    setSelectedDate(selectedDateStr);
+  };
 
   return (
     <Container>
@@ -63,12 +172,11 @@ export function Schedule() {
       </TitleWrapper>
       <CalendarWrapper>
         <Calendar
-          onDayPress={(day: { dateString: string }) =>
-            handleDateSelect(day.dateString)
-          }
+          onDayPress={handleDateSelect}
           markedDates={{
             [selectedDate || ""]: { selected: true, selectedColor: "#6200ee" },
           }}
+          minDate={format(new Date(), "yyyy-MM-dd")}
         />
       </CalendarWrapper>
 
@@ -89,26 +197,35 @@ export function Schedule() {
           </Text>
 
           <View style={{ flex: 1 }}>
-            {}
-            <ScheduleListWrapper>
-              <ScheduleList
-                data={hours}
-                keyExtractor={(item: any, index: any) => String(index)}
-                numColumns={3}
-                contentContainerStyle={{ paddingBottom: 50 }}
-                renderItem={({ item }) => (
-                  <ScheduleItem
-                    isSelected={selectedHour === item}
-                    onPress={() => {
-                      setSelectedHour(item);
-                      setShowConfirmationModal(true);
-                    }}
-                  >
-                    <ScheduleText>{item}</ScheduleText>
-                  </ScheduleItem>
-                )}
-              />
-            </ScheduleListWrapper>
+            {loading ? (
+              <ActivityIndicator size="large" color="#6200ee" />
+            ) : hours.length > 0 ? (
+              <ScheduleListWrapper>
+                <ScheduleList
+                  data={hours}
+                  keyExtractor={(item: any, index: any) => String(index)}
+                  numColumns={3}
+                  contentContainerStyle={{ paddingBottom: 50 }}
+                  renderItem={({ item }) => (
+                    <ScheduleItem
+                      isSelected={selectedHour === item}
+                      onPress={() => {
+                        setSelectedHour(item);
+                        setShowConfirmationModal(true);
+                      }}
+                    >
+                      <ScheduleText>{item}</ScheduleText>
+                    </ScheduleItem>
+                  )}
+                />
+              </ScheduleListWrapper>
+            ) : (
+              <Text
+                style={{ textAlign: "center", marginTop: 20, color: "#666" }}
+              >
+                Nenhum horário disponível para esta data.
+              </Text>
+            )}
           </View>
         </>
       )}
@@ -122,16 +239,22 @@ export function Schedule() {
         <ModalOverlay>
           <ModalContent>
             <ModalText>
-              Confirmar reserva para {"\n"}
-              {format(new Date(selectedDate!), "dd/MM/yyyy")} às {selectedHour}?
+              Confirmar agendamento para {"\n"}
+              {selectedDate &&
+                format(new Date(selectedDate), "dd/MM/yyyy")} às {selectedHour}?
             </ModalText>
 
             <ModalButtonContainer>
-              <ModalButton isConfirm onPress={handleConfirm}>
-                <ModalButtonText>Confirmar</ModalButtonText>
+              <ModalButton isConfirm onPress={handleConfirm} disabled={loading}>
+                <ModalButtonText>
+                  {loading ? "Agendando..." : "Confirmar"}
+                </ModalButtonText>
               </ModalButton>
 
-              <ModalButton onPress={() => setShowConfirmationModal(false)}>
+              <ModalButton
+                onPress={() => setShowConfirmationModal(false)}
+                disabled={loading}
+              >
                 <ModalButtonText>Cancelar</ModalButtonText>
               </ModalButton>
             </ModalButtonContainer>

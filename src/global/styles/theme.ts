@@ -8,6 +8,7 @@ export default {
     boxreserv: "#D9D9D9",
     boxprofile: "#EBF1FE",
     cancel: "#FF0000",
+    success: "#008000",
   },
 
   fonts: {

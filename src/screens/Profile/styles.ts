@@ -56,7 +56,7 @@ export const ScheduleCard = styled.View`
     props.theme.colors.boxprofile};
   padding: ${RFValue(15)}px;
   border-radius: ${RFValue(10)}px;
-  margin-bottom: ${RFValue(20)}px;
+  margin-bottom: ${RFValue(10)}px;
 `;
 
 export const ScheduleHeader = styled.View`
@@ -110,3 +110,42 @@ export const Alert = styled.Text`
 `;
 
 export { FontAwesome };
+
+export const LoadingContainer = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+`;
+
+export const EmptyContainer = styled.View`
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: ${RFValue(20)}px;
+`;
+
+export const EmptyText = styled.Text`
+  font-size: ${RFValue(16)}px;
+  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.text_light};
+  text-align: center;
+`;
+
+export const CancelButton = styled.TouchableOpacity`
+  padding-horizontal: ${RFValue(15)}px;
+  padding-vertical: ${RFValue(8)}px;
+  border-radius: ${RFValue(5)}px;
+  margin-left: ${RFValue(50)}px;
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.cancel};
+`;
+
+export const CancelButtonText = styled.Text`
+  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.background};
+  font-size: ${RFValue(14)}px;
+  font-weight: bold;
+`;
+
+export const CancelReasonText = styled.Text`
+  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.cancel};
+  font-size: ${RFValue(12)}px;
+`;
