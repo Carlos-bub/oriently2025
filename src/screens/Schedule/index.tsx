@@ -241,7 +241,7 @@ export function Schedule() {
             <ModalText>
               Confirmar agendamento para {"\n"}
               {selectedDate &&
-                format(new Date(selectedDate), "dd/MM/yyyy")} às {selectedHour}?
+                format(new Date(selectedDate + "T00:00:00"), "dd/MM/yyyy")} às {selectedHour}?
             </ModalText>
 
             <ModalButtonContainer>
