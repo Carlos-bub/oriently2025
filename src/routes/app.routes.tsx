@@ -5,12 +5,16 @@ import { Schedule } from "../screens/Schedule";
 import { Profile } from "../screens/Profile";
 import { useTheme } from "styled-components/native";
 import { Feather } from "@expo/vector-icons";
-import { Header } from "react-native/Libraries/NewAppScreen";
+import { useRoute } from "@react-navigation/native";
 
 const Tab = createBottomTabNavigator();
 
 export function AppRoutes() {
   const theme = useTheme();
+  const route = useRoute();
+  
+  // pegando os parâmetros de usuário da tela de login
+  const userParams = route.params || {};
 
   return (
     <Tab.Navigator
@@ -47,16 +51,19 @@ export function AppRoutes() {
       <Tab.Screen
         name="Home"
         component={Home}
+        initialParams={userParams}
         options={{ headerShown: false }}
       />
       <Tab.Screen
         name="Schedule"
         component={Schedule}
+        initialParams={userParams}
         options={{ headerShown: false }}
       />
       <Tab.Screen
         name="Profile"
         component={Profile}
+        initialParams={userParams}
         options={{ headerShown: false }}
       />
     </Tab.Navigator>

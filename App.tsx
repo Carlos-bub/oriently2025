@@ -1,9 +1,9 @@
 import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useCallback } from "react";
 import { ThemeProvider } from "styled-components/native";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 //Fontes
 import {
@@ -24,12 +24,28 @@ import {
 //Componentes
 import { Loading } from "./src/components/Loading";
 import theme from "./src/global/styles/theme";
-import { AppRoutes } from "./src/routes/app.routes";
-import { LoginScreen } from "src/screens/Login";
+import { AuthContextProvider } from "./src/contexts/AuthContext";
+import { Routes } from "./src/routes";
 
 SplashScreen.preventAutoHideAsync();
 
-const Stack = createNativeStackNavigator();
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID, 
+  offlineAccess: true,
+  forceCodeForRefreshToken: true, 
+  iosClientId: '', // implementação Futura
+});
+
+async function checkGoogleSignin() {
+  try {
+    await GoogleSignin.hasPlayServices();
+    console.log('GoogleSignin: Play Services disponíveis');
+  } catch (error) {
+    console.error('Erro ao verificar GoogleSignin:', error);
+  }
+}
+
+checkGoogleSignin();
 
 export default function App() {
   const [loaded, error] = useFonts({
@@ -42,27 +58,24 @@ export default function App() {
     Poppins_600SemiBold,
   });
 
-  useEffect(() => {
-    if (loaded || error) {
-      SplashScreen.hideAsync();
+  const onLayoutRootView = useCallback(async () => {
+    if (loaded) {
+      await SplashScreen.hideAsync();
     }
-  }, [loaded, error]);
+  }, [loaded]);
 
-  if (!loaded && !error) {
+  if (!loaded) {
     return <Loading />;
   }
 
   return (
     <ThemeProvider theme={theme}>
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName="Login"
-          screenOptions={{ headerShown: false }}
-        >
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="AppRoutes" component={AppRoutes} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <AuthContextProvider>
+        <NavigationContainer onReady={onLayoutRootView}>
+          <Routes />
+          <StatusBar style="light" backgroundColor="transparent" translucent />
+        </NavigationContainer>
+      </AuthContextProvider>
     </ThemeProvider>
   );
 }

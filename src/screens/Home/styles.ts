@@ -36,9 +36,17 @@ export const UserInfo = styled.View`
   align-items: center;
 `;
 
-export const UserIcon = styled(FontAwesome)`
-  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.background};
+export const UserIcon = styled(MaterialIcons)`
   font-size: ${RFValue(40)}px;
+  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.text};
+  margin-right: ${RFValue(16)}px;
+`;
+
+export const UserPhoto = styled.Image`
+  width: ${RFValue(40)}px;
+  height: ${RFValue(40)}px;
+  border-radius: ${RFValue(20)}px;
+  margin-right: ${RFValue(16)}px;
 `;
 
 export const HeaderTextWrapper = styled.View`
@@ -59,7 +67,10 @@ export const Hello = styled.Text`
   line-height: ${RFValue(24)}px;
 `;
 
-export const LogoutButton = styled(TouchableOpacity)``;
+export const LogoutButton = styled.TouchableOpacity<{ disabled?: boolean }>`
+  padding: ${RFValue(8)}px;
+  opacity: ${(props: { disabled: any; }) => (props.disabled ? 0.5 : 1)};
+`;
 
 export const LogoutIcon = styled(MaterialIcons)`
   color: ${(props: { theme: DefaultTheme }) => props.theme.colors.background};
