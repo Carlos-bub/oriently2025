@@ -24,14 +24,23 @@ import {
 } from "./styles";
 import { RFValue } from "react-native-responsive-fontsize";
 import theme from "src/global/styles/theme";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { useIsFocused, useFocusEffect } from "@react-navigation/native";
 import {
   getUserInfo,
   getPastAndMissedEvents,
   cancelEvent,
+  getEventInvitees,
 } from "../../services/calendlyService";
+import { useAuth } from "../../contexts/AuthContext";
+
+// Definindo interface para o tipo de evento
+interface CalendlyEvent {
+  uri: string;
+  name: string;
+  start_time: string;
+  status: string;
+  cancel_reason?: string;
+}
 
 export function Profile() {
   const [loading, setLoading] = useState(false);
@@ -42,6 +51,7 @@ export function Profile() {
   });
 
   const isFocused = useIsFocused();
+  const { user } = useAuth(); 
 
   const resetState = useCallback(() => {
     setEvents({
@@ -60,9 +70,20 @@ export function Profile() {
   const loadEvents = async () => {
     try {
       setLoading(true);
-      const user = await getUserInfo();
-      if (user) {
-        const result = await getPastAndMissedEvents(user.uri);
+      const calendlyUser = await getUserInfo();
+
+      if (!user?.email) {
+        RNAlert.alert("Erro", "Usuário não está logado corretamente.");
+        setLoading(false);
+        return;
+      }
+
+      if (calendlyUser) {
+        // filtrando os eventos por email do usuário logado para 
+        const result = await getPastAndMissedEvents(
+          calendlyUser.uri,
+          user.email
+        );
 
         const sortByDate = (
           a: { start_time: string | number | Date },
@@ -76,7 +97,7 @@ export function Profile() {
           missedEvents: result.missedEvents.sort(sortByDate),
         });
       } else {
-        RNAlert.alert("Erro", "Usuário não encontrado.");
+        RNAlert.alert("Erro", "Usuário do Calendly não encontrado.");
       }
     } catch (error) {
       console.error("Erro ao carregar eventos:", error);
@@ -92,47 +113,72 @@ export function Profile() {
     }, [])
   );
 
-  const handleCancelEvent = (event: { name: any; uri: string }) => {
+  const handleCancelEvent = async (event: CalendlyEvent) => {
     console.log("Tentando cancelar evento:", event);
 
-    RNAlert.alert(
-      "Cancelar Evento",
-      `Tem certeza que deseja cancelar o evento "${event.name}"?`,
-      [
-        {
-          text: "Não",
-          style: "cancel",
-        },
-        {
-          text: "Sim",
-          style: "destructive",
-          onPress: async () => {
-            setLoading(true);
-            try {
-              const result = await cancelEvent(event.uri);
-              if (result.success) {
-                await loadEvents();
-                RNAlert.alert("Sucesso", "Evento cancelado com sucesso!");
-              } else {
-                RNAlert.alert(
-                  "Erro",
-                  result.error || "Não foi possível cancelar o evento."
-                );
-              }
-            } catch (error) {
-              console.error("Erro ao cancelar evento:", error);
-              RNAlert.alert("Erro", "Não foi possível cancelar o evento.");
-            } finally {
-              setLoading(false);
-            }
+    // Verifica se o usuário logado é participante deste evento
+    try {
+      const invitees = await getEventInvitees(event.uri);
+      const isUserEvent = invitees.some(
+        (invitee: any) =>
+          invitee.email &&
+          invitee.email.toLowerCase() === user?.email?.toLowerCase()
+      );
+
+      if (!isUserEvent) {
+        RNAlert.alert(
+          "Erro",
+          "Você não tem permissão para cancelar este evento."
+        );
+        return;
+      }
+
+      // Continuar com o processo de cancelamento
+      RNAlert.alert(
+        "Cancelar Evento",
+        `Tem certeza que deseja cancelar o evento "${event.name}"?`,
+        [
+          {
+            text: "Não",
+            style: "cancel",
           },
-        },
-      ],
-      { cancelable: false }
-    );
+          {
+            text: "Sim",
+            style: "destructive",
+            onPress: async () => {
+              setLoading(true);
+              try {
+                const result = await cancelEvent(event.uri);
+                if (result.success) {
+                  await loadEvents();
+                  RNAlert.alert("Sucesso", "Evento cancelado com sucesso!");
+                } else {
+                  RNAlert.alert(
+                    "Erro",
+                    result.error || "Não foi possível cancelar o evento."
+                  );
+                }
+              } catch (error) {
+                console.error("Erro ao cancelar evento:", error);
+                RNAlert.alert("Erro", "Não foi possível cancelar o evento.");
+              } finally {
+                setLoading(false);
+              }
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    } catch (error) {
+      console.error("Erro ao verificar participantes do evento:", error);
+      RNAlert.alert(
+        "Erro",
+        "Não foi possível verificar se você tem permissão para cancelar este evento."
+      );
+    }
   };
 
-  const renderEventItem = ({ item }) => {
+  const renderEventItem = ({ item }: { item: CalendlyEvent }) => {
     const eventDate = new Date(item.start_time);
     const now = new Date();
 
@@ -152,10 +198,14 @@ export function Profile() {
       effectiveStatus = "completed";
     }
 
-    const formattedDate = format(eventDate, "dd/MM/yyyy", { locale: ptBR });
-    const formattedTime = format(eventDate, "HH:mm");
+    // Formatação de data sem usar o locale explicitamente
+    const formattedDate = eventDate.toLocaleDateString("pt-BR");
+    const formattedTime = eventDate.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
-    let iconName = "calendar";
+    let iconName: "calendar" | "check-circle" | "times-circle" = "calendar";
     let iconColor = theme.colors.primary;
     if (effectiveStatus === "completed") {
       iconName = "check-circle";

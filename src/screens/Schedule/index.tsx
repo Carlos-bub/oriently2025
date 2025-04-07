@@ -4,6 +4,7 @@ import { Calendar } from "react-native-calendars";
 import { format } from "date-fns";
 import { Modal } from "react-native";
 import { useIsFocused, useFocusEffect } from "@react-navigation/native";
+import "../../utils/calendarLocale";
 import {
   getUserInfo,
   getEventTypes,
@@ -26,6 +27,7 @@ import {
   ModalButton,
   ModalButtonText,
 } from "./styles";
+import theme from "src/global/styles/theme";
 
 export function Schedule() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -123,7 +125,6 @@ export function Schedule() {
 
       const result = await scheduleEvent(
         eventTypeUri,
-        "chln@aluni.ifnmg.edu.br", // Email fixo do usuário
         selectedDate,
         selectedHour
       );
@@ -177,6 +178,14 @@ export function Schedule() {
             [selectedDate || ""]: { selected: true, selectedColor: "#6200ee" },
           }}
           minDate={format(new Date(), "yyyy-MM-dd")}
+          locale="pt-BR"
+          theme={{
+            todayTextColor: "#6200ee",
+            textDayFontFamily: theme.fonts.Subtituloslight,
+            textMonthFontFamily: theme.fonts.buttons,
+            textDayHeaderFontFamily: theme.fonts.Subtituloslight,
+            monthTextColor: theme.colors.primary,
+          }}
         />
       </CalendarWrapper>
 
@@ -241,21 +250,22 @@ export function Schedule() {
             <ModalText>
               Confirmar agendamento para {"\n"}
               {selectedDate &&
-                format(new Date(selectedDate + "T00:00:00"), "dd/MM/yyyy")} às {selectedHour}?
+                format(new Date(selectedDate + "T00:00:00"), "dd/MM/yyyy")}{" "}
+              às {selectedHour}?
             </ModalText>
 
             <ModalButtonContainer>
-              <ModalButton isConfirm onPress={handleConfirm} disabled={loading}>
-                <ModalButtonText>
-                  {loading ? "Agendando..." : "Confirmar"}
-                </ModalButtonText>
-              </ModalButton>
-
               <ModalButton
                 onPress={() => setShowConfirmationModal(false)}
                 disabled={loading}
               >
                 <ModalButtonText>Cancelar</ModalButtonText>
+              </ModalButton>
+
+              <ModalButton isConfirm onPress={handleConfirm} disabled={loading}>
+                <ModalButtonText>
+                  {loading ? "Agendando..." : "Confirmar"}
+                </ModalButtonText>
               </ModalButton>
             </ModalButtonContainer>
           </ModalContent>

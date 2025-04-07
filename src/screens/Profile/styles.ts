@@ -9,6 +9,7 @@ export const Container = styled.View`
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.background};
   padding: ${RFValue(20)}px;
+  padding-bottom: ${RFValue(45)}px;
 `;
 
 export const Header = styled.View`

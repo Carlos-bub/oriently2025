@@ -1,5 +1,6 @@
-import React from "react";
-import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { Image, Alert } from "react-native";
 import {
   Container,
   Header,
@@ -17,31 +18,60 @@ import {
   Subtitle,
   Subtitle2,
   ButtonWrapper,
+  UserPhoto,
 } from "./styles";
 import { Button } from "../../components/Button";
+import { useAuth } from "../../contexts/AuthContext";
 
 export function Home() {
   const navigation = useNavigation<any>();
+  const route = useRoute();
+  const { user, signOut } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Login" }],
-    });
+  const handleLogout = async () => {
+    // Evitar cliques múltiplos
+    if (isLoggingOut) return;
+    
+    setIsLoggingOut(true);
+    
+    try {
+      console.log("Iniciando processo de logout...");
+      
+      // Usar o contexto para fazer logout
+      await signOut();
+      
+      console.log("Logout realizado com sucesso");
+    } catch (error) {
+      console.error("Erro no processo de logout:", error);
+      
+      // Em caso de erro
+      Alert.alert(
+        "Aviso",
+        "Ocorreu um erro ao fazer logout, por favor tente novamente."
+      );
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
+
   return (
     <Container>
       <Header>
         <UserWrapper>
           <UserInfo>
-            <UserIcon name="user-circle"></UserIcon>
+            {user?.photo ? (
+              <UserPhoto source={{ uri: user.photo }} />
+            ) : (
+              <UserIcon name="account-circle" />
+            )}
             <HeaderTextWrapper>
               <Greenting>Olá</Greenting>
-              <Hello>Usuário</Hello>
+              <Hello>{user?.name ? user.name.split(" ")[0] : ""}</Hello>
             </HeaderTextWrapper>
           </UserInfo>
-          <LogoutButton onPress={handleLogout}>
-            <LogoutIcon name="logout"></LogoutIcon>
+          <LogoutButton onPress={handleLogout} disabled={isLoggingOut}>
+            <LogoutIcon name="logout" />
           </LogoutButton>
         </UserWrapper>
       </Header>
