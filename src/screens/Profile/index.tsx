@@ -1,5 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { FlatList, ActivityIndicator, Alert as RNAlert } from "react-native";
+import React, { useState, useCallback, useMemo } from "react";
+import {
+  SectionList,
+  RefreshControl,
+  ActivityIndicator,
+  Alert as RNAlert,
+} from "react-native";
 import {
   Container,
   Header,
@@ -24,18 +29,21 @@ import {
 } from "./styles";
 import { RFValue } from "react-native-responsive-fontsize";
 import theme from "src/global/styles/theme";
-import { useIsFocused, useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   getUserInfo,
   getPastAndMissedEvents,
   cancelEvent,
   getEventInvitees,
+  clearInviteesCache,
 } from "../../services/calendlyService";
 import { CalendlyEvent } from "../../services/types";
 import { useAuth } from "../../contexts/AuthContext";
 
 export function Profile() {
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [cancelingUri, setCancelingUri] = useState<string | null>(null);
   const [events, setEvents] = useState<{
     activeEvents: CalendlyEvent[];
     pastEvents: CalendlyEvent[];
@@ -46,62 +54,55 @@ export function Profile() {
     missedEvents: [],
   });
 
-  const isFocused = useIsFocused();
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
-  const resetState = useCallback(() => {
-    setEvents({
-      activeEvents: [],
-      pastEvents: [],
-      missedEvents: [],
-    });
-  }, []);
+  const loadEvents = useCallback(
+    async (isRefresh = false) => {
+      try {
+        if (isRefresh) {
+          setRefreshing(true);
+          clearInviteesCache();
+        } else {
+          setLoading(true);
+        }
 
-  useEffect(() => {
-    if (!isFocused) {
-      resetState();
-    }
-  }, [isFocused, resetState]);
+        const calendlyUser = await getUserInfo();
 
-  const loadEvents = useCallback(async () => {
-    try {
-      setLoading(true);
-      const calendlyUser = await getUserInfo();
+        if (!user?.email) {
+          RNAlert.alert("Erro", "Usuário não está logado corretamente.");
+          return;
+        }
 
-      if (!user?.email) {
-        RNAlert.alert("Erro", "Usuário não está logado corretamente.");
+        if (calendlyUser) {
+          const result = await getPastAndMissedEvents(
+            calendlyUser.uri,
+            user.email
+          );
+
+          const sortByDate = (
+            a: { start_time: string | number | Date },
+            b: { start_time: string | number | Date }
+          ) =>
+            new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+
+          setEvents({
+            activeEvents: result.activeEvents.sort(sortByDate),
+            pastEvents: result.pastEvents.sort(sortByDate),
+            missedEvents: result.missedEvents.sort(sortByDate),
+          });
+        } else {
+          RNAlert.alert("Erro", "Usuário do Calendly não encontrado.");
+        }
+      } catch (error) {
+        console.error("Erro ao carregar eventos:", error);
+        RNAlert.alert("Erro", "Não foi possível carregar os eventos.");
+      } finally {
         setLoading(false);
-        return;
+        setRefreshing(false);
       }
-
-      if (calendlyUser) {
-        // filtrando os eventos por email do usuário logado para 
-        const result = await getPastAndMissedEvents(
-          calendlyUser.uri,
-          user.email
-        );
-
-        const sortByDate = (
-          a: { start_time: string | number | Date },
-          b: { start_time: string | number | Date }
-        ) =>
-          new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
-
-        setEvents({
-          activeEvents: result.activeEvents.sort(sortByDate),
-          pastEvents: result.pastEvents.sort(sortByDate),
-          missedEvents: result.missedEvents.sort(sortByDate),
-        });
-      } else {
-        RNAlert.alert("Erro", "Usuário do Calendly não encontrado.");
-      }
-    } catch (error) {
-      console.error("Erro ao carregar eventos:", error);
-      RNAlert.alert("Erro", "Não foi possível carregar os eventos.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.email]);
+    },
+    [user?.email]
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -110,13 +111,14 @@ export function Profile() {
   );
 
   const handleCancelEvent = async (event: CalendlyEvent) => {
-    console.log("Tentando cancelar evento:", event);
-
-    // Verifica se o usuário logado é participante deste evento
     try {
-      const invitees = await getEventInvitees(event.uri);
+      const invitees =
+        event.invitees && event.invitees.length > 0
+          ? event.invitees
+          : await getEventInvitees(event.uri);
+
       const isUserEvent = invitees.some(
-        (invitee: any) =>
+        (invitee) =>
           invitee.email &&
           invitee.email.toLowerCase() === user?.email?.toLowerCase()
       );
@@ -129,7 +131,6 @@ export function Profile() {
         return;
       }
 
-      // Continuar com o processo de cancelamento
       RNAlert.alert(
         "Cancelar Evento",
         `Tem certeza que deseja cancelar o evento "${event.name}"?`,
@@ -142,11 +143,11 @@ export function Profile() {
             text: "Sim",
             style: "destructive",
             onPress: async () => {
-              setLoading(true);
+              setCancelingUri(event.uri);
               try {
                 const result = await cancelEvent(event.uri);
                 if (result.success) {
-                  await loadEvents();
+                  await loadEvents(true);
                   RNAlert.alert("Sucesso", "Evento cancelado com sucesso!");
                 } else {
                   RNAlert.alert(
@@ -158,7 +159,7 @@ export function Profile() {
                 console.error("Erro ao cancelar evento:", error);
                 RNAlert.alert("Erro", "Não foi possível cancelar o evento.");
               } finally {
-                setLoading(false);
+                setCancelingUri(null);
               }
             },
           },
@@ -232,9 +233,9 @@ export function Profile() {
           {effectiveStatus === "active" && (
             <CancelButton
               onPress={() => handleCancelEvent(item)}
-              disabled={loading}
+              disabled={cancelingUri !== null}
             >
-              {loading ? (
+              {cancelingUri === item.uri ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <CancelButtonText>Cancelar</CancelButtonText>
@@ -246,7 +247,29 @@ export function Profile() {
     );
   };
 
-  if (loading && !events.activeEvents.length) {
+  const sections = useMemo(() => {
+    const list: { title: string; data: CalendlyEvent[] }[] = [];
+    if (events.activeEvents.length > 0) {
+      list.push({ title: "Agendamentos Ativos", data: events.activeEvents });
+    }
+    if (events.pastEvents.length > 0) {
+      list.push({ title: "Agendamentos Realizados", data: events.pastEvents });
+    }
+    if (events.missedEvents.length > 0) {
+      list.push({
+        title: "Agendamentos Cancelados",
+        data: events.missedEvents,
+      });
+    }
+    return list;
+  }, [events]);
+
+  const hasNoEvents =
+    !events.activeEvents.length &&
+    !events.pastEvents.length &&
+    !events.missedEvents.length;
+
+  if (loading && hasNoEvents) {
     return (
       <LoadingContainer>
         <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -260,56 +283,32 @@ export function Profile() {
         <Title>Meus Agendamentos</Title>
       </Header>
 
-      {events.activeEvents.length > 0 && (
-        <>
-          <Subtitle>Agendamentos Ativos</Subtitle>
-          <FlatList
-            data={events.activeEvents}
-            keyExtractor={(item) => item.uri}
-            renderItem={renderEventItem}
-            ItemSeparatorComponent={() => <Divider />}
-            style={{
-              minHeight: RFValue(150),
-              maxHeight: RFValue(150),
-              marginBottom: RFValue(20),
-            }}
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.uri}
+        renderItem={renderEventItem}
+        renderSectionHeader={({ section: { title } }) => (
+          <Subtitle>{title}</Subtitle>
+        )}
+        ItemSeparatorComponent={() => <Divider />}
+        contentContainerStyle={{
+          paddingBottom: RFValue(90),
+          flexGrow: hasNoEvents ? 1 : 0,
+        }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => loadEvents(true)}
+            colors={[theme.colors.primary]}
           />
-        </>
-      )}
-
-      {events.pastEvents.length > 0 && (
-        <>
-          <Subtitle>Agendamentos Realizados</Subtitle>
-          <FlatList
-            data={events.pastEvents}
-            keyExtractor={(item) => item.uri}
-            renderItem={renderEventItem}
-            ItemSeparatorComponent={() => <Divider />}
-            style={{ minHeight: RFValue(150), marginBottom: RFValue(20) }}
-          />
-        </>
-      )}
-
-      {events.missedEvents.length > 0 && (
-        <>
-          <Subtitle>Agendamentos Cancelados</Subtitle>
-          <FlatList
-            data={events.missedEvents}
-            keyExtractor={(item) => item.uri}
-            renderItem={renderEventItem}
-            ItemSeparatorComponent={() => <Divider />}
-            style={{ minHeight: RFValue(150), marginBottom: RFValue(20) }}
-          />
-        </>
-      )}
-
-      {!events.activeEvents.length &&
-        !events.pastEvents.length &&
-        !events.missedEvents.length && (
+        }
+        ListEmptyComponent={
           <EmptyContainer>
             <EmptyText>Nenhum agendamento encontrado.</EmptyText>
           </EmptyContainer>
-        )}
+        }
+      />
     </Container>
   );
 }

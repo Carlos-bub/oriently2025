@@ -78,34 +78,42 @@ export function LoginScreen() {
         JSON.stringify(result)
       );
 
-      // Acessando os dados usando a estrutura da v13 do GoogleSignin
+      // Acessando os dados e o Google ID Token (nunca confundir com Access Token)
       let userName = "";
       let userEmail = "";
       let userPhoto = "";
+      let idToken: string | null = null;
 
       if (result.type === "success" && result.data?.user) {
         userName = result.data.user.name || "";
         userEmail = result.data.user.email || "";
         userPhoto = result.data.user.photo || "";
+        idToken = result.data.idToken || null;
       }
 
-      console.log("Dados extraídos do usuário:", {
-        userName,
-        userEmail,
-        userPhoto,
-      });
+      if (!idToken) {
+        const tokens = await GoogleSignin.getTokens();
+        idToken = tokens.idToken || null;
+      }
 
-      if (userName && userEmail) {
-        await signIn({
-          name: userName,
-          email: userEmail,
-          photo: userPhoto,
-        });
+      if (userName && userEmail && idToken) {
+        await signIn(
+          {
+            name: userName,
+            email: userEmail,
+            photo: userPhoto,
+          },
+          idToken,
+          false
+        );
 
         Alert.alert("Sucesso", "Login realizado com sucesso!");
       } else {
-        console.error("Não foi possível obter dados do usuário:", result);
-        Alert.alert("Erro", "Não foi possível obter os dados do usuário");
+        console.error("Não foi possível obter dados/ID Token do usuário:", result);
+        Alert.alert(
+          "Erro",
+          "Não foi possível validar o token de autenticação do Google."
+        );
       }
     } catch (error: any) {
       console.error("Erro no login com Google:", error);
@@ -159,21 +167,20 @@ export function LoginScreen() {
       </Buttons>
 
       <Buttons
-        bgColor="#dddbdb"
+        bgColor="#258BFF"
         onPress={() => {
-          // contexto para login de teste
-          signIn({
-            name: "Usuário de Teste",
-            email: "teste@example.com",
-            photo: "",
-          });
+          signIn(
+            {
+              name: "Visitante Demo",
+              email: "teste@example.com",
+              photo: "",
+            },
+            null,
+            true
+          );
         }}
       >
-        <Icon
-          source={require("../../../assets/apple-logo.png")}
-          resizeMode="contain"
-        />
-        <ButtonText color="#000">Continuar com Apple</ButtonText>
+        <ButtonText color="#ffffff">Entrar no Modo Demo</ButtonText>
       </Buttons>
 
       <FooterText>
