@@ -31,20 +31,16 @@ import {
   cancelEvent,
   getEventInvitees,
 } from "../../services/calendlyService";
+import { CalendlyEvent } from "../../services/types";
 import { useAuth } from "../../contexts/AuthContext";
-
-// Definindo interface para o tipo de evento
-interface CalendlyEvent {
-  uri: string;
-  name: string;
-  start_time: string;
-  status: string;
-  cancel_reason?: string;
-}
 
 export function Profile() {
   const [loading, setLoading] = useState(false);
-  const [events, setEvents] = useState({
+  const [events, setEvents] = useState<{
+    activeEvents: CalendlyEvent[];
+    pastEvents: CalendlyEvent[];
+    missedEvents: CalendlyEvent[];
+  }>({
     activeEvents: [],
     pastEvents: [],
     missedEvents: [],
@@ -67,7 +63,7 @@ export function Profile() {
     }
   }, [isFocused, resetState]);
 
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     try {
       setLoading(true);
       const calendlyUser = await getUserInfo();
@@ -105,12 +101,12 @@ export function Profile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.email]);
 
   useFocusEffect(
     useCallback(() => {
       loadEvents();
-    }, [])
+    }, [loadEvents])
   );
 
   const handleCancelEvent = async (event: CalendlyEvent) => {

@@ -3,8 +3,9 @@ import { User, EventType, AvailabilitySchedule, CalendlyEvent, Invitee } from ".
 import { isBefore } from "date-fns";
 import Constants from "expo-constants";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-const API_TOKEN = process.env.EXPO_PUBLIC_API_TOKEN;
+const env = process.env as Record<string, string | undefined>;
+const API_BASE_URL = env.EXPO_PUBLIC_API_BASE_URL;
+const API_TOKEN = env.EXPO_PUBLIC_API_TOKEN;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -72,9 +73,10 @@ export const getAvailableTimes = async (
     const availableTimes = response.data.collection.map((schedule) => {
       const utcTime = schedule.start_time;
       const localDate = new Date(utcTime);
-      return localDate.toLocaleTimeString([], {
+      return localDate.toLocaleTimeString("pt-BR", {
         hour: "2-digit",
         minute: "2-digit",
+        hour12: false,
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
     });
@@ -264,7 +266,8 @@ export const scheduleEvent = async (
   selectedTime: string
 ) => {
   try {
-    const startTime = `${selectedDate}T${selectedTime}:00Z`;
+    const localStart = new Date(`${selectedDate}T${selectedTime}:00`);
+    const startTime = localStart.toISOString();
 
     // Cria um link de agendamento instantâneo
     const response = await api.post("/scheduling_links", {
@@ -274,7 +277,7 @@ export const scheduleEvent = async (
       start_time_window: {
         start_time: startTime,
         end_time: new Date(
-          new Date(startTime).getTime() + 24 * 60 * 60 * 1000
+          localStart.getTime() + 24 * 60 * 60 * 1000
         ).toISOString(),
       },
     });

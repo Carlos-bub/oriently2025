@@ -78,31 +78,15 @@ export function LoginScreen() {
         JSON.stringify(result)
       );
 
-      // Acessando os dados usando a estrutura correta
+      // Acessando os dados usando a estrutura da v13 do GoogleSignin
       let userName = "";
       let userEmail = "";
       let userPhoto = "";
 
-      // Convertendo para tipo correto
-      // Verifica se result tem user diretamente ou dentro de data
-      if (result.user) {
-        // Nova estrutura do GoogleSignin
-        userName = result.user.name || "";
-        userEmail = result.user.email || "";
-        userPhoto = result.user.photo || "";
-      } else {
-        // Estrutura antiga (com type e data)
-        const googleResponse = result as unknown as GoogleSignInResponse;
-
-        if (
-          googleResponse.type === "success" &&
-          googleResponse.data &&
-          googleResponse.data.user
-        ) {
-          userName = googleResponse.data.user.name || "";
-          userEmail = googleResponse.data.user.email || "";
-          userPhoto = googleResponse.data.user.photo || "";
-        }
+      if (result.type === "success" && result.data?.user) {
+        userName = result.data.user.name || "";
+        userEmail = result.data.user.email || "";
+        userPhoto = result.data.user.photo || "";
       }
 
       console.log("Dados extraídos do usuário:", {
@@ -189,7 +173,7 @@ export function LoginScreen() {
           source={require("../../../assets/apple-logo.png")}
           resizeMode="contain"
         />
-        <ButtonText color="#ffffff">Continuar com Apple</ButtonText>
+        <ButtonText color="#000">Continuar com Apple</ButtonText>
       </Buttons>
 
       <FooterText>

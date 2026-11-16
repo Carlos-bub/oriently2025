@@ -155,7 +155,7 @@ export function Schedule() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const selectedDateObj = new Date(selectedDateStr);
+    const selectedDateObj = new Date(`${selectedDateStr}T00:00:00`);
     selectedDateObj.setHours(0, 0, 0, 0);
 
     if (selectedDateObj < today) {
@@ -212,10 +212,10 @@ export function Schedule() {
               <ScheduleListWrapper>
                 <ScheduleList
                   data={hours}
-                  keyExtractor={(item: any, index: any) => String(index)}
+                  keyExtractor={(item: string, index: number) => `${item}-${index}`}
                   numColumns={3}
                   contentContainerStyle={{ paddingBottom: 50 }}
-                  renderItem={({ item }) => (
+                  renderItem={({ item }: { item: string }) => (
                     <ScheduleItem
                       isSelected={selectedHour === item}
                       onPress={() => {

@@ -20,7 +20,7 @@ export function AppRoutes() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ color, size }) => {
-          let iconName;
+          let iconName: keyof typeof Feather.glyphMap = "home";
 
           if (route.name === "Home") {
             iconName = "home";

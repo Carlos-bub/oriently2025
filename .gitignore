@@ -47,3 +47,23 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# local portable JDK
+.jdk17/
+
+# IDE / Editors
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Build artifacts
+*.apk
+*.aab
+*.ipa
+
+# Logs
+*.log
+pnpm-debug.log*

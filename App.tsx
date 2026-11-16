@@ -17,8 +17,9 @@ import {
   Inter_800ExtraBold,
 } from "@expo-google-fonts/inter";
 import {
-  Poppins_700Bold,
+  Poppins_500Medium,
   Poppins_600SemiBold,
+  Poppins_700Bold,
 } from "@expo-google-fonts/poppins";
 
 //Componentes
@@ -29,8 +30,12 @@ import { Routes } from "./src/routes";
 
 SplashScreen.preventAutoHideAsync();
 
+const googleWebClientId = (
+  process.env as Record<string, string | undefined>
+).EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+
 GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID, 
+  webClientId: googleWebClientId, 
   offlineAccess: true,
   forceCodeForRefreshToken: true, 
   iosClientId: '', // implementação Futura
@@ -54,8 +59,9 @@ export default function App() {
     Inter_400Regular,
     Inter_500Medium,
     Inter_800ExtraBold,
-    Poppins_700Bold,
+    Poppins_500Medium,
     Poppins_600SemiBold,
+    Poppins_700Bold,
   });
 
   const onLayoutRootView = useCallback(async () => {
