@@ -8,6 +8,8 @@ export interface User {
     uri: string;
     name: string;
     slug: string;
+    active?: boolean;
+    duration?: number;
   }
   
   export interface AvailabilitySchedule {
@@ -31,4 +33,9 @@ export interface User {
     end_time: string;
     cancel_reason?: string;
     invitees?: Invitee[];
+    location?: {
+      type?: string;
+      location?: string;
+      join_url?: string;
+    };
   }
