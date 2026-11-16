@@ -36,6 +36,8 @@ export interface User {
     | "NETWORK_ERROR"
     | "TIMEOUT"
     | "BOOKING_IN_PROGRESS"
+    | "UNCERTAIN_BOOKING_STATE"
+    | "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD"
     | "UNKNOWN";
 
   export interface BookingResult {

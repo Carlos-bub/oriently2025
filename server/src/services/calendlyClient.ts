@@ -32,6 +32,17 @@ interface CalendlyClientOptions {
   timeoutMs: number;
 }
 
+interface CalendlyPaginatedResponse<T> {
+  collection?: T[];
+  pagination?: {
+    count?: number;
+    next_page?: string | null;
+    next_page_token?: string | null;
+  };
+}
+
+const MAX_PAGINATION_PAGES = 10;
+
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function createCalendlyClient(
@@ -130,25 +141,63 @@ export function createCalendlyClient(
     },
 
     async getScheduledEvents(userUri: string, count = 100) {
-      const res = await withRetry(() =>
-        http.get<{ collection: CalendlyScheduledEvent[] }>("/scheduled_events", {
-          params: {
-            user: userUri,
-            status: ["active", "canceled", "completed"],
-            count,
-          },
-        })
-      );
-      return res.data.collection || [];
+      const collected: CalendlyScheduledEvent[] = [];
+      let pageToken: string | undefined;
+
+      for (let page = 0; page < MAX_PAGINATION_PAGES; page += 1) {
+        const res = await withRetry(() =>
+          http.get<CalendlyPaginatedResponse<CalendlyScheduledEvent>>(
+            "/scheduled_events",
+            {
+              params: {
+                user: userUri,
+                status: ["active", "canceled", "completed"],
+                count,
+                ...(pageToken ? { page_token: pageToken } : {}),
+              },
+            }
+          )
+        );
+
+        if (res.data.collection?.length) {
+          collected.push(...res.data.collection);
+        }
+
+        const nextToken = res.data.pagination?.next_page_token;
+        if (!nextToken) break;
+        pageToken = nextToken;
+      }
+
+      return collected;
     },
 
     async getEventInvitees(eventUuid: string) {
-      const res = await withRetry(() =>
-        http.get<{ collection: CalendlyInvitee[] }>(
-          `/scheduled_events/${encodeURIComponent(eventUuid)}/invitees`
-        )
-      );
-      return res.data.collection || [];
+      const collected: CalendlyInvitee[] = [];
+      let pageToken: string | undefined;
+
+      for (let page = 0; page < MAX_PAGINATION_PAGES; page += 1) {
+        const res = await withRetry(() =>
+          http.get<CalendlyPaginatedResponse<CalendlyInvitee>>(
+            `/scheduled_events/${encodeURIComponent(eventUuid)}/invitees`,
+            {
+              params: {
+                count: 100,
+                ...(pageToken ? { page_token: pageToken } : {}),
+              },
+            }
+          )
+        );
+
+        if (res.data.collection?.length) {
+          collected.push(...res.data.collection);
+        }
+
+        const nextToken = res.data.pagination?.next_page_token;
+        if (!nextToken) break;
+        pageToken = nextToken;
+      }
+
+      return collected;
     },
 
     async cancelScheduledEvent(eventUuid: string, reason: string) {

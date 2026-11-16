@@ -238,15 +238,37 @@ export function Schedule() {
       }
 
       if (
+        result.code === "UNCERTAIN_BOOKING_STATE" ||
         result.code === "TIMEOUT" ||
         result.code === "NETWORK_ERROR" ||
         result.code === "BOOKING_IN_PROGRESS"
       ) {
         setShowConfirmationModal(false);
         Alert.alert(
-          "Confirmação pendente",
+          "Verifique sua agenda",
           result.error ||
-            "Não foi possível confirmar a resposta a tempo. Verifique sua agenda antes de tentar novamente."
+            "Não foi possível confirmar a resposta a tempo. Consulte sua agenda antes de tentar novamente.",
+          [
+            { text: "Fechar", style: "cancel" },
+            {
+              text: "Ver agenda",
+              onPress: () => {
+                resetState();
+                navigation.navigate("Profile");
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      if (result.code === "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD") {
+        setShowConfirmationModal(false);
+        setSelectedHour(null);
+        setIdempotencyKey(null);
+        Alert.alert(
+          "Solicitação inválida",
+          result.error || "Selecione o horário novamente."
         );
         return;
       }

@@ -14,14 +14,31 @@ export function mapBookingError(error: unknown): {
   message: string;
 } {
   if (error instanceof ApiError) {
+    if (error.code === "UNCERTAIN_BOOKING_STATE") {
+      return {
+        code: "UNCERTAIN_BOOKING_STATE",
+        message:
+          "A tentativa anterior teve resultado incerto. Consulte sua agenda antes de agendar novamente.",
+      };
+    }
+
+    if (error.code === "BOOKING_IN_PROGRESS") {
+      return {
+        code: "BOOKING_IN_PROGRESS",
+        message:
+          "Já existe uma solicitação em andamento para este horário. Aguarde ou verifique sua agenda.",
+      };
+    }
+
+    if (error.code === "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD") {
+      return {
+        code: "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD",
+        message:
+          "Esta solicitação já foi utilizada para outro horário. Selecione o horário novamente.",
+      };
+    }
+
     if (error.status === 400 || error.status === 409 || error.status === 422) {
-      if (error.code === "BOOKING_IN_PROGRESS") {
-        return {
-          code: "BOOKING_IN_PROGRESS",
-          message:
-            "Já existe uma solicitação em andamento para este horário. Aguarde ou verifique sua agenda.",
-        };
-      }
       return {
         code: "SLOT_UNAVAILABLE",
         message:

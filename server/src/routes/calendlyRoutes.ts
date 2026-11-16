@@ -39,6 +39,37 @@ const cancelBodySchema = z.object({
   reason: z.string().trim().min(1).max(300).optional(),
 });
 
+const INVITEE_LOOKUP_CONCURRENCY = 4;
+
+async function mapWithConcurrencyLimit<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T) => Promise<R>
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function runWorker() {
+    while (nextIndex < items.length) {
+      const current = nextIndex;
+      nextIndex += 1;
+      try {
+        const value = await worker(items[current]);
+        results[current] = { status: "fulfilled", value };
+      } catch (reason) {
+        results[current] = { status: "rejected", reason };
+      }
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(limit, items.length) },
+    () => runWorker()
+  );
+  await Promise.all(workers);
+  return results;
+}
+
 function getLocationLabel(location?: CalendlyScheduledEvent["location"]): string | undefined {
   if (!location) return undefined;
   if (location.location) return location.location;
@@ -214,8 +245,10 @@ export function createCalendlyRouter({
       const owner = await calendly.getCurrentUser();
       const events = await calendly.getScheduledEvents(owner.uri, 100);
 
-      const enriched = await Promise.all(
-        events.map(async (event) => {
+      const settled = await mapWithConcurrencyLimit(
+        events,
+        INVITEE_LOOKUP_CONCURRENCY,
+        async (event) => {
           const uuid = event.uri.split("/").pop();
           if (!uuid) return null;
           const invitees = await calendly.getEventInvitees(uuid);
@@ -225,12 +258,27 @@ export function createCalendlyRouter({
           );
           if (!isParticipant) return null;
           return { ...event, invitees };
-        })
+        }
       );
 
-      const userEvents = enriched.filter(
-        (e): e is NonNullable<typeof e> => e !== null
-      );
+      let partialErrors = 0;
+      const userEvents: Array<
+        CalendlyScheduledEvent & { invitees: CalendlyInvitee[] }
+      > = [];
+
+      for (const item of settled) {
+        if (item.status === "fulfilled") {
+          if (item.value) userEvents.push(item.value);
+          continue;
+        }
+
+        const err: any = item.reason;
+        const status = err?.response?.status || err?.statusCode;
+        if (status === 401 || status === 403 || status === 429) {
+          throw err;
+        }
+        partialErrors += 1;
+      }
 
       const now = Date.now();
       const activeEvents = userEvents.filter(
@@ -243,7 +291,12 @@ export function createCalendlyRouter({
       );
       const missedEvents = userEvents.filter((e) => e.status === "canceled");
 
-      res.json({ activeEvents, pastEvents, missedEvents });
+      res.json({
+        activeEvents,
+        pastEvents,
+        missedEvents,
+        ...(partialErrors > 0 ? { partialErrors } : {}),
+      });
     } catch (error) {
       handleCalendlyError(error, res, "Erro ao listar agendamentos.");
     }
@@ -445,14 +498,31 @@ export function createCalendlyRouter({
 
       try {
         const invitees = await calendly.getEventInvitees(eventUuid);
-        const isParticipant = invitees.some(
+        const activeInvitees = invitees.filter(
+          (inv) => inv.status !== "canceled"
+        );
+        const myInvitee = activeInvitees.find(
           (inv) => inv.email && inv.email.toLowerCase() === authenticatedEmail
         );
 
-        if (!isParticipant) {
+        if (!myInvitee) {
           res.status(403).json({
             code: "FORBIDDEN",
             error: "Você não tem permissão para cancelar este evento.",
+          });
+          return;
+        }
+
+        // A API pública POST /scheduled_events/:uuid/cancellation cancela o evento inteiro.
+        // Em reuniões compartilhadas (>1 participante ativo), bloqueamos para não afetar outros estudantes.
+        if (activeInvitees.length > 1) {
+          res.status(409).json({
+            code: "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED",
+            error:
+              "Esta é uma reunião compartilhada. Para cancelar apenas a sua participação sem afetar outros estudantes, utilize o link individual de cancelamento.",
+            ...(myInvitee.cancel_url
+              ? { cancelUrl: myInvitee.cancel_url }
+              : {}),
           });
           return;
         }

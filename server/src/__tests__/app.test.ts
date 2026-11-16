@@ -5,9 +5,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createApp } from "../app";
-import { ServerConfig } from "../config/env";
+import { loadConfig, ServerConfig } from "../config/env";
 import { GoogleTokenVerifier } from "../middleware/auth";
-import { CalendlyClient } from "../services/calendlyClient";
+import { CalendlyClient, createCalendlyClient } from "../services/calendlyClient";
 import { createIdempotencyStore } from "../services/idempotencyStore";
 import {
   AuthenticatedUser,
@@ -21,6 +21,7 @@ const DISALLOWED_EVENT_TYPE =
   "https://api.calendly.com/event_types/99999999-9999-9999-9999-999999999999";
 
 const baseConfig: ServerConfig = {
+  nodeEnv: "test",
   port: 0,
   calendlyApiBaseUrl: "https://api.calendly.com",
   calendlyApiToken: "fake-secret-token",
@@ -554,4 +555,167 @@ test("rejeita reutilização de Idempotency-Key com payload diferente (422), blo
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
+});
+
+test("bloqueia cancelamento de reunião compartilhada (409) e exige allowlist em produção", async () => {
+  let cancelCalled = false;
+
+  const app = createApp({
+    config: baseConfig,
+    idempotencyStore: createIdempotencyStore(),
+    calendlyClient: createMockCalendlyClient({
+      async getEventInvitees() {
+        return [
+          {
+            uri: "https://api.calendly.com/scheduled_events/evt-shared/invitees/inv-1",
+            email: "aluno@ufmg.br",
+            status: "active",
+            cancel_url: "https://calendly.com/cancellations/inv-1",
+          },
+          {
+            uri: "https://api.calendly.com/scheduled_events/evt-shared/invitees/inv-2",
+            email: "colega@ufmg.br",
+            status: "active",
+          },
+        ];
+      },
+      async cancelScheduledEvent() {
+        cancelCalled = true;
+      },
+    }),
+    tokenVerifier: createMockVerifier({ "valid-token": studentUser }),
+  });
+
+  await withServer(app, async (baseUrl) => {
+    const res = await fetch(
+      `${baseUrl}/api/calendly/events/evt-shared/cancel`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer valid-token",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    assert.equal(res.status, 409);
+    const body = (await res.json()) as { code: string; cancelUrl?: string };
+    assert.equal(body.code, "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED");
+    assert.equal(body.cancelUrl, "https://calendly.com/cancellations/inv-1");
+    assert.equal(cancelCalled, false);
+  });
+
+  const prevNodeEnv = process.env.NODE_ENV;
+  const prevAllow = process.env.ALLOWED_EVENT_TYPE_URIS;
+  try {
+    process.env.NODE_ENV = "production";
+    process.env.ALLOWED_EVENT_TYPE_URIS = "";
+    assert.throws(() => loadConfig(), /ALLOWED_EVENT_TYPE_URIS/);
+  } finally {
+    process.env.NODE_ENV = prevNodeEnv;
+    process.env.ALLOWED_EVENT_TYPE_URIS = prevAllow;
+  }
+});
+
+test("consulta paginada de eventos via page_token e tratamento de erros parciais sem vazar terceiros", async () => {
+  const mockCalendlyServer = http.createServer((req, res) => {
+    const url = new URL(req.url || "/", "http://127.0.0.1");
+    if (url.pathname === "/scheduled_events") {
+      const pageToken = url.searchParams.get("page_token");
+      res.writeHead(200, { "Content-Type": "application/json" });
+      if (!pageToken) {
+        res.end(
+          JSON.stringify({
+            collection: [
+              {
+                uri: "https://api.calendly.com/scheduled_events/evt-p1",
+                name: "Página 1",
+                status: "active",
+                start_time: "2099-11-20T17:00:00Z",
+                end_time: "2099-11-20T17:30:00Z",
+              },
+            ],
+            pagination: { next_page_token: "cursor-2" },
+          })
+        );
+        return;
+      }
+      res.end(
+        JSON.stringify({
+          collection: [
+            {
+              uri: "https://api.calendly.com/scheduled_events/evt-p2",
+              name: "Página 2",
+              status: "active",
+              start_time: "2099-11-21T17:00:00Z",
+              end_time: "2099-11-21T17:30:00Z",
+            },
+          ],
+          pagination: { next_page_token: null },
+        })
+      );
+      return;
+    }
+    res.writeHead(404);
+    res.end();
+  });
+
+  await new Promise<void>((resolve) =>
+    mockCalendlyServer.listen(0, "127.0.0.1", resolve)
+  );
+  const addr = mockCalendlyServer.address();
+  assert.ok(addr && typeof addr !== "string");
+
+  try {
+    const client = createCalendlyClient({
+      baseURL: `http://127.0.0.1:${addr.port}`,
+      token: "test-token",
+      timeoutMs: 3000,
+    });
+
+    const events = await client.getScheduledEvents(
+      "https://api.calendly.com/users/advisor-1"
+    );
+    assert.equal(events.length, 2);
+    assert.equal(events[0].name, "Página 1");
+    assert.equal(events[1].name, "Página 2");
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      mockCalendlyServer.close((e) => (e ? reject(e) : resolve()))
+    );
+  }
+
+  // Erro parcial em um evento não vaza evento de terceiros nem derruba a listagem
+  const partialApp = createApp({
+    config: baseConfig,
+    idempotencyStore: createIdempotencyStore(),
+    calendlyClient: createMockCalendlyClient({
+      async getEventInvitees(uuid) {
+        if (uuid === "evt-2") {
+          throw new Error("Erro transitório em evento de terceiro");
+        }
+        return [
+          {
+            uri: "https://api.calendly.com/scheduled_events/evt-1/invitees/inv-1",
+            email: "aluno@ufmg.br",
+            status: "active",
+          },
+        ];
+      },
+    }),
+    tokenVerifier: createMockVerifier({ "valid-token": studentUser }),
+  });
+
+  await withServer(partialApp, async (baseUrl) => {
+    const res = await fetch(`${baseUrl}/api/calendly/events`, {
+      headers: { Authorization: "Bearer valid-token" },
+    });
+    assert.equal(res.status, 200);
+    const body = (await res.json()) as {
+      activeEvents: Array<{ uri: string }>;
+      partialErrors?: number;
+    };
+    assert.equal(body.activeEvents.length, 1);
+    assert.ok(body.activeEvents[0].uri.endsWith("/evt-1"));
+    assert.equal(body.partialErrors, 1);
+  });
 });

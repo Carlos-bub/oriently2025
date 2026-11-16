@@ -211,3 +211,55 @@ test("trata erro de autenticação (403) e limite de requisições (429)", async
     }
   );
 });
+
+test("preserva códigos específicos UNCERTAIN_BOOKING_STATE e IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD", async () => {
+  await withMockServer(
+    (req, res) => {
+      if (req.headers["idempotency-key"] === "key-uncertain") {
+        res.writeHead(409, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            code: "UNCERTAIN_BOOKING_STATE",
+            error: "Resultado incerto",
+          })
+        );
+        return;
+      }
+      res.writeHead(422, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          code: "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD",
+          error: "Payload diferente",
+        })
+      );
+    },
+    async (baseUrl) => {
+      const client = createTestClient(baseUrl);
+
+      const uncertain = await executeNativeBooking(
+        {
+          eventTypeUri: EVENT_TYPE_URI,
+          startTimeUtc: "2026-11-20T17:00:00Z",
+          idempotencyKey: "key-uncertain",
+        },
+        client
+      );
+      assert.equal(uncertain.success, false);
+      assert.equal(uncertain.code, "UNCERTAIN_BOOKING_STATE");
+
+      const diffPayload = await executeNativeBooking(
+        {
+          eventTypeUri: EVENT_TYPE_URI,
+          startTimeUtc: "2026-11-20T17:00:00Z",
+          idempotencyKey: "key-diff",
+        },
+        client
+      );
+      assert.equal(diffPayload.success, false);
+      assert.equal(
+        diffPayload.code,
+        "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD"
+      );
+    }
+  );
+});

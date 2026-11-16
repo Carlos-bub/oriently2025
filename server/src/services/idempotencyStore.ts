@@ -1,3 +1,12 @@
+/**
+ * Persistência local de idempotência baseada em arquivo JSON com escrita atômica.
+ *
+ * Limites operacionais:
+ * - Esta implementação pressupõe UMA ÚNICA instância do servidor com armazenamento
+ *   em disco persistente (ex.: VM, container com volume persistente ou VPS).
+ * - Em ambientes com múltiplas réplicas horizontais ou serverless stateless,
+ *   substitua este store por um armazenamento distribuído (ex.: Redis ou banco SQL).
+ */
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
