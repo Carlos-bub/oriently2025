@@ -51,6 +51,13 @@ yarn-error.*
 # local portable JDK
 .jdk17/
 
+# backend server
+server/node_modules/
+server/.env
+
+# mobile test build
+.test-dist/
+
 # IDE / Editors
 .idea/
 .vscode/
