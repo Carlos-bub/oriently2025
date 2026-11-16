@@ -51,6 +51,11 @@ function getLocationLabel(location?: CalendlyScheduledEvent["location"]): string
 
 function handleCalendlyError(error: any, res: Response, fallback: string) {
   const status = error.response?.status || error.statusCode;
+  console.error(
+    "[Calendly Error]",
+    status || error.code,
+    JSON.stringify(error.response?.data || error.message)
+  );
 
   if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
     return res.status(504).json({
@@ -327,6 +332,22 @@ export function createCalendlyRouter({
         return;
       }
 
+      const owner = await calendly.getCurrentUser();
+      const eventTypes = await calendly.getEventTypes(owner.uri);
+      const matchedEventType = eventTypes.find((t) => t.uri === eventTypeUri);
+      const defaultLocation = matchedEventType?.locations?.[0];
+
+      const resolvedLocation = locationKind
+        ? { kind: locationKind }
+        : defaultLocation?.kind
+          ? {
+              kind: defaultLocation.kind,
+              ...(defaultLocation.location
+                ? { location: defaultLocation.location }
+                : {}),
+            }
+          : undefined;
+
       const payload: CreateInviteePayload = {
         event_type: eventTypeUri,
         start_time: startTimeUtc,
@@ -335,7 +356,7 @@ export function createCalendlyRouter({
           email: authenticatedUser.email,
           timezone: timezone || "America/Sao_Paulo",
         },
-        ...(locationKind ? { location: { kind: locationKind } } : {}),
+        ...(resolvedLocation ? { location: resolvedLocation } : {}),
       };
 
       const inviteeResource = await calendly.createInvitee(payload);

@@ -239,6 +239,7 @@ test("cria agendamento via POST /invitees usando identidade do token e evita dup
 
   const app = createApp({
     config: baseConfig,
+    idempotencyStore: createIdempotencyStore(),
     calendlyClient: createMockCalendlyClient({
       async createInvitee(payload) {
         createCalls += 1;
@@ -297,6 +298,7 @@ test("aplica autorização por usuário em listagem e cancelamento de eventos", 
 
   const app = createApp({
     config: baseConfig,
+    idempotencyStore: createIdempotencyStore(),
     calendlyClient: createMockCalendlyClient({
       async cancelScheduledEvent(uuid) {
         canceledUuid = uuid;
@@ -350,6 +352,7 @@ test("aplica autorização por usuário em listagem e cancelamento de eventos", 
 test("trata horário indisponível (409), timeout (504) e rate limit (429)", async () => {
   const unavailableApp = createApp({
     config: baseConfig,
+    idempotencyStore: createIdempotencyStore(),
     calendlyClient: createMockCalendlyClient({
       async createInvitee() {
         const err: any = new Error("Slot taken");
@@ -390,6 +393,7 @@ test("trata horário indisponível (409), timeout (504) e rate limit (429)", asy
 
   const timeoutApp = createApp({
     config: baseConfig,
+    idempotencyStore: createIdempotencyStore(),
     calendlyClient: createMockCalendlyClient({
       async createInvitee() {
         const err: any = new Error("timeout of 5000ms exceeded");

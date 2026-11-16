@@ -11,12 +11,19 @@ export interface CalendlyUser {
   email?: string;
 }
 
+export interface CalendlyEventTypeLocation {
+  kind: string;
+  location?: string;
+  additional_info?: string;
+}
+
 export interface CalendlyEventType {
   uri: string;
   name: string;
   slug: string;
   active: boolean;
   duration: number;
+  locations?: CalendlyEventTypeLocation[];
 }
 
 export interface CalendlyAvailableTime {
@@ -62,6 +69,7 @@ export interface CreateInviteePayload {
   };
   location?: {
     kind: string;
+    location?: string;
   };
 }
 
