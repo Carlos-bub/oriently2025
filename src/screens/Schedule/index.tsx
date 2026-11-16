@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -7,10 +7,13 @@ import {
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { format } from "date-fns";
-import { useIsFocused, useFocusEffect } from "@react-navigation/native";
+import {
+  useIsFocused,
+  useFocusEffect,
+  useNavigation,
+} from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { WebView } from "react-native-webview";
 import { useTheme } from "styled-components/native";
 
 import "../../utils/calendarLocale";
@@ -18,11 +21,10 @@ import {
   getUserInfo,
   getEventTypes,
   getAvailableTimes,
-  scheduleEvent,
+  createNativeBooking,
   clearInviteesCache,
 } from "../../services/calendlyService";
-import { EventType } from "../../services/types";
-import { useAuth } from "../../contexts/AuthContext";
+import { BookingDetails, EventType } from "../../services/types";
 import {
   Container,
   ScrollBody,
@@ -57,21 +59,33 @@ import {
   ModalButtonContainer,
   ModalButton,
   ModalButtonText,
-  WebViewContainer,
-  WebViewHeader,
-  WebViewTitle,
-  WebViewCloseButton,
-  WebViewCloseText,
+  SuccessIconBadge,
+  SuccessDetailsCard,
+  SuccessEventTitle,
+  SuccessDetailRow,
+  SuccessDetailText,
+  SuccessButtonsStack,
+  SuccessPrimaryButton,
+  SuccessPrimaryButtonText,
+  SuccessSecondaryButton,
+  SuccessSecondaryButtonText,
 } from "./styles";
 
+function generateIdempotencyKey(eventTypeUri: string, startTimeUtc: string) {
+  const random = Math.random().toString(36).slice(2, 10);
+  const eventSuffix = eventTypeUri.split("/").pop() || "evt";
+  return `${eventSuffix}-${startTimeUtc}-${random}`;
+}
+
 export function Schedule() {
-  const { user } = useAuth();
+  const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const theme = useTheme();
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedHour, setSelectedHour] = useState<string | null>(null);
+  const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
   const [loadingTypes, setLoadingTypes] = useState(true);
   const [loadingTimes, setLoadingTimes] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -80,7 +94,10 @@ export function Schedule() {
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [eventTypeUri, setEventTypeUri] = useState<string | null>(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [bookingUrl, setBookingUrl] = useState<string | null>(null);
+  const [confirmedBooking, setConfirmedBooking] =
+    useState<BookingDetails | null>(null);
+
+  const submittingRef = useRef(false);
   const isFocused = useIsFocused();
 
   // 3 columns with 20px horizontal padding on each side and 10px gaps
@@ -89,10 +106,12 @@ export function Schedule() {
   const resetState = useCallback(() => {
     setSelectedDate(null);
     setSelectedHour(null);
+    setIdempotencyKey(null);
     setHours([]);
     setTimesError(null);
     setShowConfirmationModal(false);
-    setBookingUrl(null);
+    setConfirmedBooking(null);
+    submittingRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -158,41 +177,79 @@ export function Schedule() {
     fetchAvailableTimes();
   }, [fetchAvailableTimes]);
 
+  const handleSelectHour = (isoUtc: string) => {
+    if (!eventTypeUri) return;
+    setSelectedHour(isoUtc);
+    setIdempotencyKey(generateIdempotencyKey(eventTypeUri, isoUtc));
+    setShowConfirmationModal(true);
+  };
+
   const handleConfirm = async () => {
+    if (submittingRef.current) return;
+
     if (!selectedDate || !selectedHour || !eventTypeUri) {
       Alert.alert("Erro", "Selecione uma data e horário.");
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
-    try {
-      const result = await scheduleEvent(
-        eventTypeUri,
-        selectedDate,
-        selectedHour
-      );
 
-      if (result.success && result.schedulingUrl) {
+    try {
+      const requestKey =
+        idempotencyKey || generateIdempotencyKey(eventTypeUri, selectedHour);
+
+      const result = await createNativeBooking({
+        eventTypeUri,
+        startTimeUtc: selectedHour,
+        idempotencyKey: requestKey,
+      });
+
+      if (result.success && result.booking) {
         setShowConfirmationModal(false);
         setSelectedHour(null);
-
-        const params = new URLSearchParams();
-        if (user?.name) params.append("name", user.name);
-        if (user?.email) params.append("email", user.email);
-        const queryString = params.toString();
-        const separator = result.schedulingUrl.includes("?") ? "&" : "?";
-        const prefilledUrl = queryString
-          ? `${result.schedulingUrl}${separator}${queryString}`
-          : result.schedulingUrl;
-
-        setBookingUrl(prefilledUrl);
-      } else {
-        Alert.alert("Erro", result.error || "Falha ao criar agendamento.");
+        setIdempotencyKey(null);
+        clearInviteesCache();
+        setConfirmedBooking(result.booking);
+        fetchAvailableTimes();
+        return;
       }
+
+      if (result.code === "SLOT_UNAVAILABLE") {
+        setShowConfirmationModal(false);
+        setSelectedHour(null);
+        setIdempotencyKey(null);
+        Alert.alert(
+          "Horário indisponível",
+          result.error || "Este horário não está mais disponível."
+        );
+        fetchAvailableTimes();
+        return;
+      }
+
+      if (
+        result.code === "TIMEOUT" ||
+        result.code === "NETWORK_ERROR" ||
+        result.code === "BOOKING_IN_PROGRESS"
+      ) {
+        setShowConfirmationModal(false);
+        Alert.alert(
+          "Confirmação pendente",
+          result.error ||
+            "Não foi possível confirmar a resposta a tempo. Verifique sua agenda antes de tentar novamente."
+        );
+        return;
+      }
+
+      Alert.alert(
+        "Não foi possível agendar",
+        result.error || "Falha ao confirmar o agendamento."
+      );
     } catch (error) {
       console.error("Erro no agendamento:", error);
-      Alert.alert("Erro", "Não foi possível criar o agendamento.");
+      Alert.alert("Erro", "Não foi possível concluir o agendamento.");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -211,12 +268,8 @@ export function Schedule() {
     }
 
     setSelectedHour(null);
+    setIdempotencyKey(null);
     setSelectedDate(selectedDateStr);
-  };
-
-  const handleCloseWebView = () => {
-    setBookingUrl(null);
-    clearInviteesCache();
   };
 
   const formatHourLabel = (isoOrHour: string) => {
@@ -226,6 +279,30 @@ export function Schedule() {
       minute: "2-digit",
       hour12: false,
     });
+  };
+
+  const formatBookingDate = (isoString: string) => {
+    return new Date(isoString).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const formatBookingTimeRange = (startIso: string, endIso?: string) => {
+    const start = formatHourLabel(startIso);
+    if (!endIso) return start;
+    return `${start} – ${formatHourLabel(endIso)}`;
+  };
+
+  const handleGoToAgenda = () => {
+    resetState();
+    navigation.navigate("Profile");
+  };
+
+  const handleGoHome = () => {
+    resetState();
+    navigation.navigate("Home");
   };
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -281,6 +358,7 @@ export function Schedule() {
                     onPress={() => {
                       setEventTypeUri(eventType.uri);
                       setSelectedHour(null);
+                      setIdempotencyKey(null);
                     }}
                   >
                     <EventTypeChipText isSelected={isSelected}>
@@ -377,10 +455,8 @@ export function Schedule() {
                         cardWidth={gridCardWidth}
                         isSelected={isSelected}
                         activeOpacity={0.8}
-                        onPress={() => {
-                          setSelectedHour(item);
-                          setShowConfirmationModal(true);
-                        }}
+                        disabled={submitting}
+                        onPress={() => handleSelectHour(item)}
                       >
                         <ScheduleText isSelected={isSelected}>
                           {formatHourLabel(item)}
@@ -406,11 +482,14 @@ export function Schedule() {
         </ContentWrapper>
       </ScrollBody>
 
+      {/* Modal de confirmação antes de enviar */}
       <Modal
         visible={showConfirmationModal}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setShowConfirmationModal(false)}
+        onRequestClose={() => {
+          if (!submitting) setShowConfirmationModal(false);
+        }}
       >
         <ModalOverlay>
           <ModalContent>
@@ -448,41 +527,110 @@ export function Schedule() {
                 onPress={handleConfirm}
                 disabled={submitting}
               >
-                <ModalButtonText isConfirm>
-                  {submitting ? "Agendando..." : "Confirmar"}
-                </ModalButtonText>
+                {submitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <ModalButtonText isConfirm>Confirmar</ModalButtonText>
+                )}
               </ModalButton>
             </ModalButtonContainer>
           </ModalContent>
         </ModalOverlay>
       </Modal>
 
+      {/* Modal de sucesso após resposta real da API */}
       <Modal
-        visible={!!bookingUrl}
-        animationType="slide"
-        onRequestClose={handleCloseWebView}
+        visible={!!confirmedBooking}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleGoToAgenda}
       >
-        <WebViewContainer>
-          <WebViewHeader>
-            <WebViewTitle>Concluir Agendamento</WebViewTitle>
-            <WebViewCloseButton onPress={handleCloseWebView}>
-              <WebViewCloseText>Concluir / Fechar</WebViewCloseText>
-            </WebViewCloseButton>
-          </WebViewHeader>
-          {bookingUrl && (
-            <WebView
-              source={{ uri: bookingUrl }}
-              startInLoadingState
-              renderLoading={() => (
-                <ActivityIndicator
-                  size="large"
-                  color={theme.colors.primary}
-                  style={{ flex: 1 }}
-                />
-              )}
-            />
-          )}
-        </WebViewContainer>
+        <ModalOverlay>
+          <ModalContent>
+            <SuccessIconBadge>
+              <Feather
+                name="check-circle"
+                size={28}
+                color={theme.colors.success}
+              />
+            </SuccessIconBadge>
+
+            <ModalTitle>Reunião agendada!</ModalTitle>
+            <ModalText>
+              Sua orientação de TCC foi confirmada com sucesso.
+            </ModalText>
+
+            {confirmedBooking && (
+              <SuccessDetailsCard>
+                <SuccessEventTitle numberOfLines={2}>
+                  {confirmedBooking.eventName}
+                </SuccessEventTitle>
+
+                <SuccessDetailRow>
+                  <Feather
+                    name="calendar"
+                    size={14}
+                    color={theme.colors.primary_dark}
+                  />
+                  <SuccessDetailText>
+                    {formatBookingDate(confirmedBooking.startTime)}
+                  </SuccessDetailText>
+                </SuccessDetailRow>
+
+                <SuccessDetailRow>
+                  <Feather
+                    name="clock"
+                    size={14}
+                    color={theme.colors.primary_dark}
+                  />
+                  <SuccessDetailText>
+                    {formatBookingTimeRange(
+                      confirmedBooking.startTime,
+                      confirmedBooking.endTime
+                    )}
+                  </SuccessDetailText>
+                </SuccessDetailRow>
+
+                {confirmedBooking.locationLabel && (
+                  <SuccessDetailRow>
+                    <Feather
+                      name="map-pin"
+                      size={14}
+                      color={theme.colors.lavender}
+                    />
+                    <SuccessDetailText numberOfLines={1}>
+                      {confirmedBooking.locationLabel}
+                    </SuccessDetailText>
+                  </SuccessDetailRow>
+                )}
+              </SuccessDetailsCard>
+            )}
+
+            <SuccessButtonsStack>
+              <SuccessPrimaryButton
+                activeOpacity={0.85}
+                onPress={handleGoToAgenda}
+                accessibilityRole="button"
+                accessibilityLabel="Ver meus agendamentos"
+              >
+                <SuccessPrimaryButtonText>
+                  Ver meus agendamentos
+                </SuccessPrimaryButtonText>
+              </SuccessPrimaryButton>
+
+              <SuccessSecondaryButton
+                activeOpacity={0.85}
+                onPress={handleGoHome}
+                accessibilityRole="button"
+                accessibilityLabel="Voltar ao início"
+              >
+                <SuccessSecondaryButtonText>
+                  Voltar ao início
+                </SuccessSecondaryButtonText>
+              </SuccessSecondaryButton>
+            </SuccessButtonsStack>
+          </ModalContent>
+        </ModalOverlay>
       </Modal>
     </Container>
   );

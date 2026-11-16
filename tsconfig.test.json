@@ -11,6 +11,9 @@
   },
   "include": [
     "src/services/apiClient.ts",
-    "src/services/__tests__/apiClient.test.ts"
+    "src/services/bookingService.ts",
+    "src/services/types.ts",
+    "src/services/__tests__/apiClient.test.ts",
+    "src/services/__tests__/bookingService.test.ts"
   ]
 }

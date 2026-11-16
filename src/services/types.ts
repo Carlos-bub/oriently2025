@@ -17,6 +17,35 @@ export interface User {
     end_time: string;   
   }
 
+  export interface BookingDetails {
+    inviteeUri: string;
+    eventUri: string;
+    eventName: string;
+    startTime: string;
+    endTime?: string;
+    locationLabel?: string;
+    cancelUrl?: string;
+    rescheduleUrl?: string;
+    status: string;
+  }
+
+  export type BookingErrorCode =
+    | "SLOT_UNAVAILABLE"
+    | "AUTH_ERROR"
+    | "RATE_LIMIT"
+    | "NETWORK_ERROR"
+    | "TIMEOUT"
+    | "BOOKING_IN_PROGRESS"
+    | "UNKNOWN";
+
+  export interface BookingResult {
+    success: boolean;
+    deduplicated?: boolean;
+    booking?: BookingDetails;
+    error?: string;
+    code?: BookingErrorCode;
+  }
+
   export interface Invitee {
     uri: string;
     email: string;

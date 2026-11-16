@@ -1,0 +1,128 @@
+import { AxiosInstance } from "axios";
+import { ApiError } from "./apiClient";
+import { BookingErrorCode, BookingResult } from "./types";
+
+export interface CreateNativeBookingParams {
+  eventTypeUri: string;
+  startTimeUtc: string;
+  timezone?: string;
+  idempotencyKey?: string;
+}
+
+export function mapBookingError(error: unknown): {
+  code: BookingErrorCode;
+  message: string;
+} {
+  if (error instanceof ApiError) {
+    if (error.status === 400 || error.status === 409 || error.status === 422) {
+      if (error.code === "BOOKING_IN_PROGRESS") {
+        return {
+          code: "BOOKING_IN_PROGRESS",
+          message:
+            "Já existe uma solicitação em andamento para este horário. Aguarde ou verifique sua agenda.",
+        };
+      }
+      return {
+        code: "SLOT_UNAVAILABLE",
+        message:
+          "Este horário não está mais disponível. Por favor, escolha outro horário.",
+      };
+    }
+
+    if (
+      error.status === 401 ||
+      error.status === 403 ||
+      error.code === "UNAUTHORIZED" ||
+      error.code === "FORBIDDEN" ||
+      error.code === "AUTH_ERROR"
+    ) {
+      return {
+        code: "AUTH_ERROR",
+        message:
+          "Sua sessão expirou ou não tem permissão. Faça login novamente com o Google.",
+      };
+    }
+
+    if (error.status === 429 || error.code === "RATE_LIMIT") {
+      return {
+        code: "RATE_LIMIT",
+        message:
+          "Muitas tentativas em pouco tempo. Aguarde alguns instantes e tente novamente.",
+      };
+    }
+
+    if (error.status === 504 || error.code === "TIMEOUT") {
+      return {
+        code: "TIMEOUT",
+        message:
+          "A confirmação demorou mais que o esperado. Verifique sua agenda antes de tentar novamente para evitar duplicidade.",
+      };
+    }
+
+    if (error.code === "NETWORK_ERROR" || error.status === 503) {
+      return {
+        code: "NETWORK_ERROR",
+        message:
+          "Falha de conexão com o servidor. Verifique sua rede e confira sua agenda antes de tentar novamente.",
+      };
+    }
+
+    return {
+      code: "UNKNOWN",
+      message: error.message || "Não foi possível confirmar o agendamento.",
+    };
+  }
+
+  return {
+    code: "UNKNOWN",
+    message: "Não foi possível confirmar o agendamento.",
+  };
+}
+
+export async function executeNativeBooking(
+  params: CreateNativeBookingParams,
+  client: AxiosInstance,
+  onSuccessInvalidate?: () => void
+): Promise<BookingResult> {
+  try {
+    const timezone =
+      params.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    const response = await client.post<BookingResult>(
+      "/api/calendly/bookings",
+      {
+        eventTypeUri: params.eventTypeUri,
+        startTimeUtc: params.startTimeUtc,
+        timezone,
+        ...(params.idempotencyKey
+          ? { idempotencyKey: params.idempotencyKey }
+          : {}),
+      },
+      params.idempotencyKey
+        ? {
+            headers: {
+              "Idempotency-Key": params.idempotencyKey,
+            },
+          }
+        : undefined
+    );
+
+    if (response.data?.success && response.data.booking) {
+      onSuccessInvalidate?.();
+      return response.data;
+    }
+
+    return {
+      success: false,
+      code: "UNKNOWN",
+      error: response.data?.error || "Não foi possível confirmar o agendamento.",
+    };
+  } catch (error) {
+    const mapped = mapBookingError(error);
+    return {
+      success: false,
+      code: mapped.code,
+      error: mapped.message,
+    };
+  }
+}

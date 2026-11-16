@@ -311,39 +311,87 @@ export const ModalButtonText = styled.Text<{ isConfirm?: boolean }>`
   font-size: ${RFValue(13.5)}px;
 `;
 
-/* ── WebView Modal ── */
-export const WebViewContainer = styled.SafeAreaView`
-  flex: 1;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.background};
-`;
-
-export const WebViewHeader = styled.View`
-  flex-direction: row;
+/* ── Success Modal ── */
+export const SuccessIconBadge = styled.View`
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background-color: #e6f6ec;
   align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom-width: 1px;
-  border-bottom-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.border};
+  justify-content: center;
+  margin-bottom: 14px;
 `;
 
-export const WebViewTitle = styled.Text`
+export const SuccessDetailsCard = styled.View`
+  width: 100%;
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.surface};
+  border-width: 1px;
+  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
+  border-radius: 16px;
+  padding: 14px;
+  gap: 8px;
+  margin-bottom: 18px;
+`;
+
+export const SuccessEventTitle = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.text_primary};
   font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(15)}px;
+  font-size: ${RFValue(14.5)}px;
+  margin-bottom: 2px;
 `;
 
-export const WebViewCloseButton = styled.TouchableOpacity`
-  padding: 7px 14px;
-  border-radius: 10px;
+export const SuccessDetailRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+`;
+
+export const SuccessDetailText = styled.Text`
+  color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.text_secondary};
+  font-family: ${theme.fonts.Subtituloslight};
+  font-size: ${RFValue(12.5)}px;
+  flex: 1;
+`;
+
+export const SuccessButtonsStack = styled.View`
+  width: 100%;
+  gap: 10px;
+`;
+
+export const SuccessPrimaryButton = styled.TouchableOpacity`
+  width: 100%;
+  padding-vertical: 12px;
+  border-radius: 14px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.primary};
+  align-items: center;
+  justify-content: center;
 `;
 
-export const WebViewCloseText = styled.Text`
+export const SuccessPrimaryButtonText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) => props.theme.colors.background};
-  font-family: ${theme.fonts.buttons};
-  font-size: ${RFValue(12.5)}px;
+  font-family: ${theme.fonts.Subtitulos};
+  font-size: ${RFValue(13.5)}px;
+`;
+
+export const SuccessSecondaryButton = styled.TouchableOpacity`
+  width: 100%;
+  padding-vertical: 11px;
+  border-radius: 14px;
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.surface};
+  border-width: 1px;
+  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
+  align-items: center;
+  justify-content: center;
+`;
+
+export const SuccessSecondaryButtonText = styled.Text`
+  color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.text_secondary};
+  font-family: ${theme.fonts.Subtitulos};
+  font-size: ${RFValue(13)}px;
 `;

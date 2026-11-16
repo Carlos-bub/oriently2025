@@ -1,4 +1,4 @@
-import axios from "axios";
+import { AxiosInstance } from "axios";
 import Constants from "expo-constants";
 import {
   User,
@@ -6,12 +6,17 @@ import {
   AvailabilitySchedule,
   CalendlyEvent,
   Invitee,
+  BookingResult,
 } from "./types";
 import {
   createApiClient,
   getAuthProviderRef,
   resolveBackendUrl,
 } from "./apiClient";
+import {
+  CreateNativeBookingParams,
+  executeNativeBooking,
+} from "./bookingService";
 
 const env = process.env as Record<string, string | undefined>;
 const BACKEND_URL = resolveBackendUrl(
@@ -29,6 +34,12 @@ export const clearInviteesCache = () => {
   Object.keys(inviteesCache).forEach((key) => {
     delete inviteesCache[key];
   });
+};
+
+export const getInviteesCacheSize = () => Object.keys(inviteesCache).length;
+
+export const seedInviteesCacheForTest = (uri: string, invitees: Invitee[]) => {
+  inviteesCache[uri] = invitees;
 };
 
 // Busca informações do orientador via BFF
@@ -81,7 +92,7 @@ export const getAvailableTimes = async (
   return response.data.collection.map((schedule) => schedule.start_time);
 };
 
-// Mantido para compatibilidade com Profile enquanto a migração avança
+// Mantido para compatibilidade com Profile
 export const getEventInvitees = async (
   eventUri: string
 ): Promise<Invitee[]> => {
@@ -122,67 +133,12 @@ export const getPastAndMissedEvents = async (
   }
 };
 
-// Fluxo temporário preservado até a Fase 3 (migração para POST /invitees nativo)
-export const scheduleEvent = async (
-  eventTypeUri: string,
-  selectedDate: string,
-  selectedTimeOrIso: string
-) => {
-  try {
-    const apiBaseUrl = env.EXPO_PUBLIC_API_BASE_URL;
-    const apiToken = env.EXPO_PUBLIC_API_TOKEN;
-
-    if (!apiBaseUrl || !apiToken) {
-      return {
-        success: false,
-        error:
-          "Agendamento nativo será habilitado na Fase 3. Configure EXPO_PUBLIC_API_BASE_URL/TOKEN para o fluxo legado temporário.",
-      };
-    }
-
-    const startDate = selectedTimeOrIso.includes("T")
-      ? new Date(selectedTimeOrIso)
-      : new Date(`${selectedDate}T${selectedTimeOrIso}:00`);
-
-    const response = await axios.post(
-      `${apiBaseUrl}/scheduling_links`,
-      {
-        max_event_count: 1,
-        owner: eventTypeUri,
-        owner_type: "EventType",
-        start_time_window: {
-          start_time: startDate.toISOString(),
-          end_time: new Date(
-            startDate.getTime() + 24 * 60 * 60 * 1000
-          ).toISOString(),
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (response.data.resource?.booking_url) {
-      return {
-        success: true,
-        schedulingUrl: response.data.resource.booking_url,
-      };
-    }
-
-    return {
-      success: false,
-      error: "Não foi possível criar o link de agendamento.",
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.message || "Não foi possível criar o agendamento.",
-    };
-  }
+// Cria agendamento real diretamente via POST /api/calendly/bookings -> Calendly POST /invitees
+export const createNativeBooking = async (
+  params: CreateNativeBookingParams,
+  client: AxiosInstance = api
+): Promise<BookingResult> => {
+  return executeNativeBooking(params, client, clearInviteesCache);
 };
 
 // Cancela evento via BFF com validação de autorização no backend
