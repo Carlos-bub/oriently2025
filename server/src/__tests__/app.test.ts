@@ -130,21 +130,27 @@ function createMockCalendlyClient(
     },
     async getEventInvitees(eventUuid: string) {
       if (eventUuid === "evt-1") {
-        return [
+        return {
+          items: [
+            {
+              uri: "https://api.calendly.com/scheduled_events/evt-1/invitees/inv-1",
+              email: "aluno@ufmg.br",
+              status: "active",
+            },
+          ],
+          truncated: false,
+        };
+      }
+      return {
+        items: [
           {
-            uri: "https://api.calendly.com/scheduled_events/evt-1/invitees/inv-1",
-            email: "aluno@ufmg.br",
+            uri: "https://api.calendly.com/scheduled_events/evt-2/invitees/inv-2",
+            email: "outro@ufmg.br",
             status: "active",
           },
-        ];
-      }
-      return [
-        {
-          uri: "https://api.calendly.com/scheduled_events/evt-2/invitees/inv-2",
-          email: "outro@ufmg.br",
-          status: "active",
-        },
-      ];
+        ],
+        truncated: false,
+      };
     },
     async cancelScheduledEvent() {
       return;
@@ -568,19 +574,22 @@ test("bloqueia cancelamento de reunião compartilhada (409) e exige allowlist em
     idempotencyStore: createIdempotencyStore(),
     calendlyClient: createMockCalendlyClient({
       async getEventInvitees() {
-        return [
-          {
-            uri: "https://api.calendly.com/scheduled_events/evt-shared/invitees/inv-1",
-            email: "aluno@ufmg.br",
-            status: "active",
-            cancel_url: "https://calendly.com/cancellations/inv-1",
-          },
-          {
-            uri: "https://api.calendly.com/scheduled_events/evt-shared/invitees/inv-2",
-            email: "colega@ufmg.br",
-            status: "active",
-          },
-        ];
+        return {
+          items: [
+            {
+              uri: "https://api.calendly.com/scheduled_events/evt-shared/invitees/inv-1",
+              email: "aluno@ufmg.br",
+              status: "active",
+              cancel_url: "https://calendly.com/cancellations/inv-1",
+            },
+            {
+              uri: "https://api.calendly.com/scheduled_events/evt-shared/invitees/inv-2",
+              email: "colega@ufmg.br",
+              status: "active",
+            },
+          ],
+          truncated: false,
+        };
       },
       async cancelScheduledEvent() {
         cancelCalled = true;
@@ -766,13 +775,16 @@ test("consulta paginada de eventos via page_token e tratamento de erros parciais
         if (uuid === "evt-2") {
           throw new Error("Erro transitório em evento de terceiro");
         }
-        return [
-          {
-            uri: "https://api.calendly.com/scheduled_events/evt-1/invitees/inv-1",
-            email: "aluno@ufmg.br",
-            status: "active",
-          },
-        ];
+        return {
+          items: [
+            {
+              uri: "https://api.calendly.com/scheduled_events/evt-1/invitees/inv-1",
+              email: "aluno@ufmg.br",
+              status: "active",
+            },
+          ],
+          truncated: false,
+        };
       },
     }),
     tokenVerifier: createMockVerifier({ "valid-token": studentUser }),
@@ -792,5 +804,91 @@ test("consulta paginada de eventos via page_token e tratamento de erros parciais
     assert.ok(body.activeEvents[0].uri.endsWith("/evt-1"));
     assert.equal(body.partialErrors, 1);
     assert.equal(body.truncated, true);
+  });
+});
+
+test("sinaliza truncamento na paginação de participantes (getEventInvitees) e bloqueia cancelamento inseguro", async () => {
+  const alwaysMoreInviteesServer = http.createServer((req, res) => {
+    const url = new URL(req.url || "/", "http://127.0.0.1");
+    if (url.pathname.endsWith("/invitees")) {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          collection: [
+            {
+              uri: "https://api.calendly.com/scheduled_events/evt-big/invitees/inv-x",
+              email: "participante@ufmg.br",
+              status: "active",
+            },
+          ],
+          pagination: { next_page_token: "more-invitees" },
+        })
+      );
+      return;
+    }
+    res.writeHead(404);
+    res.end();
+  });
+
+  await new Promise<void>((resolve) =>
+    alwaysMoreInviteesServer.listen(0, "127.0.0.1", resolve)
+  );
+  const addr = alwaysMoreInviteesServer.address();
+  assert.ok(addr && typeof addr !== "string");
+
+  try {
+    const client = createCalendlyClient({
+      baseURL: `http://127.0.0.1:${addr.port}`,
+      token: "test-token",
+      timeoutMs: 3000,
+    });
+    const invResult = await client.getEventInvitees("evt-big");
+    assert.equal(invResult.truncated, true);
+    assert.equal(invResult.items.length, 10);
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      alwaysMoreInviteesServer.close((e) => (e ? reject(e) : resolve()))
+    );
+  }
+
+  let cancelCalled = false;
+  const truncatedCancelApp = createApp({
+    config: baseConfig,
+    idempotencyStore: createIdempotencyStore(),
+    calendlyClient: createMockCalendlyClient({
+      async getEventInvitees() {
+        return {
+          items: [
+            {
+              uri: "https://api.calendly.com/scheduled_events/evt-big/invitees/inv-1",
+              email: "outro@ufmg.br",
+              status: "active",
+            },
+          ],
+          truncated: true,
+        };
+      },
+      async cancelScheduledEvent() {
+        cancelCalled = true;
+      },
+    }),
+    tokenVerifier: createMockVerifier({ "valid-token": studentUser }),
+  });
+
+  await withServer(truncatedCancelApp, async (baseUrl) => {
+    const res = await fetch(
+      `${baseUrl}/api/calendly/events/evt-big/cancel`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer valid-token",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    assert.equal(res.status, 502);
+    const body = (await res.json()) as { code: string };
+    assert.equal(body.code, "INVITEES_LIST_TRUNCATED");
+    assert.equal(cancelCalled, false);
   });
 });

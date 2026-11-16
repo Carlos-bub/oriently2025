@@ -27,7 +27,9 @@ export interface CalendlyClient {
     userUri: string,
     count?: number
   ): Promise<PaginatedFetchResult<CalendlyScheduledEvent>>;
-  getEventInvitees(eventUuid: string): Promise<CalendlyInvitee[]>;
+  getEventInvitees(
+    eventUuid: string
+  ): Promise<PaginatedFetchResult<CalendlyInvitee>>;
   cancelScheduledEvent(eventUuid: string, reason: string): Promise<void>;
 }
 
@@ -187,6 +189,7 @@ export function createCalendlyClient(
     async getEventInvitees(eventUuid: string) {
       const collected: CalendlyInvitee[] = [];
       let pageToken: string | undefined;
+      let truncated = false;
 
       for (let page = 0; page < MAX_PAGINATION_PAGES; page += 1) {
         const res = await withRetry(() =>
@@ -206,11 +209,18 @@ export function createCalendlyClient(
         }
 
         const nextToken = res.data.pagination?.next_page_token;
-        if (!nextToken) break;
+        if (!nextToken) {
+          truncated = false;
+          break;
+        }
+        if (page === MAX_PAGINATION_PAGES - 1) {
+          truncated = true;
+          break;
+        }
         pageToken = nextToken;
       }
 
-      return collected;
+      return { items: collected, truncated };
     },
 
     async cancelScheduledEvent(eventUuid: string, reason: string) {

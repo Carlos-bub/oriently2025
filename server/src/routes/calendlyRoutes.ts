@@ -254,24 +254,33 @@ export function createCalendlyRouter({
         async (event) => {
           const uuid = event.uri.split("/").pop();
           if (!uuid) return null;
-          const invitees = await calendly.getEventInvitees(uuid);
+          const { items: invitees, truncated: inviteesTruncated } =
+            await calendly.getEventInvitees(uuid);
           const isParticipant = invitees.some(
             (inv: CalendlyInvitee) =>
               inv.email && inv.email.toLowerCase() === authenticatedEmail
           );
-          if (!isParticipant) return null;
-          return { ...event, invitees };
+          if (!isParticipant) {
+            return { event: null, inviteesTruncated };
+          }
+          return { event: { ...event, invitees }, inviteesTruncated };
         }
       );
 
       let partialErrors = 0;
+      let anyInviteesTruncated = false;
       const userEvents: Array<
         CalendlyScheduledEvent & { invitees: CalendlyInvitee[] }
       > = [];
 
       for (const item of settled) {
         if (item.status === "fulfilled") {
-          if (item.value) userEvents.push(item.value);
+          if (item.value?.inviteesTruncated) {
+            anyInviteesTruncated = true;
+          }
+          if (item.value?.event) {
+            userEvents.push(item.value.event);
+          }
           continue;
         }
 
@@ -299,7 +308,7 @@ export function createCalendlyRouter({
         pastEvents,
         missedEvents,
         ...(partialErrors > 0 ? { partialErrors } : {}),
-        ...(truncated ? { truncated: true } : {}),
+        ...(truncated || anyInviteesTruncated ? { truncated: true } : {}),
       });
     } catch (error) {
       handleCalendlyError(error, res, "Erro ao listar agendamentos.");
@@ -501,7 +510,8 @@ export function createCalendlyRouter({
       }
 
       try {
-        const invitees = await calendly.getEventInvitees(eventUuid);
+        const { items: invitees, truncated: inviteesTruncated } =
+          await calendly.getEventInvitees(eventUuid);
         const activeInvitees = invitees.filter(
           (inv) => inv.status !== "canceled"
         );
@@ -510,6 +520,14 @@ export function createCalendlyRouter({
         );
 
         if (!myInvitee) {
+          if (inviteesTruncated) {
+            res.status(502).json({
+              code: "INVITEES_LIST_TRUNCATED",
+              error:
+                "Não foi possível verificar todos os participantes deste evento com segurança.",
+            });
+            return;
+          }
           res.status(403).json({
             code: "FORBIDDEN",
             error: "Você não tem permissão para cancelar este evento.",
@@ -518,8 +536,8 @@ export function createCalendlyRouter({
         }
 
         // A API pública POST /scheduled_events/:uuid/cancellation cancela o evento inteiro.
-        // Em reuniões compartilhadas (>1 participante ativo), bloqueamos para não afetar outros estudantes.
-        if (activeInvitees.length > 1) {
+        // Em reuniões compartilhadas (>1 participante ativo) ou com lista truncada, bloqueamos para não afetar outros estudantes.
+        if (activeInvitees.length > 1 || inviteesTruncated) {
           res.status(409).json({
             code: "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED",
             error:
