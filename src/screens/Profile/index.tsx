@@ -1,9 +1,13 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import {
   SectionList,
   RefreshControl,
   ActivityIndicator,
   Alert as RNAlert,
+  Linking,
+  AppState,
+  View,
+  Text,
 } from "react-native";
 import {
   Container,
@@ -46,6 +50,8 @@ export function Profile() {
   const [refreshing, setRefreshing] = useState(false);
   const [cancelingUri, setCancelingUri] = useState<string | null>(null);
   const [eventsError, setEventsError] = useState<string | null>(null);
+  const [partialWarning, setPartialWarning] = useState<string | null>(null);
+  const pendingExternalRefreshRef = useRef(false);
   const [events, setEvents] = useState<{
     activeEvents: CalendlyEvent[];
     pastEvents: CalendlyEvent[];
@@ -62,6 +68,7 @@ export function Profile() {
     async (isRefresh = false) => {
       try {
         setEventsError(null);
+        setPartialWarning(null);
         if (isRefresh) {
           setRefreshing(true);
           clearInviteesCache();
@@ -81,6 +88,14 @@ export function Profile() {
             calendlyUser.uri,
             user.email
           );
+
+          if (result.partialErrors || result.truncated) {
+            setPartialWarning(
+              result.truncated
+                ? "Exibindo resultados parciais (limite de paginação atingido)."
+                : "Algumas reuniões não puderam ser verificadas agora. Puxe para atualizar."
+            );
+          }
 
           const sortByDate = (
             a: { start_time: string | number | Date },
@@ -117,6 +132,19 @@ export function Profile() {
       loadEvents();
     }, [loadEvents])
   );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active" && pendingExternalRefreshRef.current) {
+        pendingExternalRefreshRef.current = false;
+        loadEvents(true);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [loadEvents]);
 
   const handleCancelEvent = async (event: CalendlyEvent) => {
     try {
@@ -157,6 +185,36 @@ export function Profile() {
                 if (result.success) {
                   await loadEvents(true);
                   RNAlert.alert("Sucesso", "Evento cancelado com sucesso!");
+                } else if (
+                  result.code === "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED"
+                ) {
+                  const message =
+                    result.error ||
+                    "Esta é uma reunião compartilhada. Cancele apenas a sua participação pelo link individual.";
+
+                  if (result.cancelUrl) {
+                    const cancelUrl = result.cancelUrl;
+                    RNAlert.alert("Reunião compartilhada", message, [
+                      { text: "Fechar", style: "cancel" },
+                      {
+                        text: "Cancelar minha participação",
+                        onPress: async () => {
+                          try {
+                            pendingExternalRefreshRef.current = true;
+                            await Linking.openURL(cancelUrl);
+                          } catch {
+                            pendingExternalRefreshRef.current = false;
+                            RNAlert.alert(
+                              "Erro",
+                              "Não foi possível abrir o link de cancelamento."
+                            );
+                          }
+                        },
+                      },
+                    ]);
+                  } else {
+                    RNAlert.alert("Reunião compartilhada", message);
+                  }
                 } else {
                   RNAlert.alert(
                     "Erro",
@@ -311,14 +369,37 @@ export function Profile() {
             colors={[theme.colors.primary]}
           />
         }
+        ListHeaderComponent={
+          partialWarning && !hasNoEvents ? (
+            <View
+              style={{
+                backgroundColor: theme.colors.boxprofile,
+                borderRadius: 12,
+                padding: 10,
+                marginBottom: 12,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.colors.date,
+                  fontSize: RFValue(12),
+                }}
+              >
+                {partialWarning}
+              </Text>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <EmptyContainer>
             <EmptyText>
-              {eventsError || "Nenhum agendamento encontrado."}
+              {eventsError ||
+                partialWarning ||
+                "Nenhum agendamento encontrado."}
             </EmptyText>
-            {eventsError && (
+            {(eventsError || partialWarning) && (
               <CancelButton
-                onPress={() => loadEvents()}
+                onPress={() => loadEvents(true)}
                 style={{
                   backgroundColor: theme.colors.primary,
                   marginTop: RFValue(12),

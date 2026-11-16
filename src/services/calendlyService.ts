@@ -4,9 +4,10 @@ import {
   User,
   EventType,
   AvailabilitySchedule,
-  CalendlyEvent,
   Invitee,
   BookingResult,
+  CancelEventResult,
+  PastAndMissedEventsResult,
 } from "./types";
 import {
   createApiClient,
@@ -15,7 +16,9 @@ import {
 } from "./apiClient";
 import {
   CreateNativeBookingParams,
+  executeCancelEvent,
   executeNativeBooking,
+  fetchEventsWithMeta,
 } from "./bookingService";
 
 const env = process.env as Record<string, string | undefined>;
@@ -92,30 +95,14 @@ export const getEventInvitees = async (
   return [];
 };
 
-// Busca todos os eventos do usuário autenticado via BFF (propaga erros reais)
+// Busca todos os eventos do usuário autenticado via BFF (propaga erros reais, partialErrors e truncated)
 export const getPastAndMissedEvents = async (
   _userUri?: string,
   _currentUserEmail?: string
-) => {
-  const response = await api.get<{
-    activeEvents: CalendlyEvent[];
-    pastEvents: CalendlyEvent[];
-    missedEvents: CalendlyEvent[];
-  }>("/api/calendly/events");
-
-  const { activeEvents, pastEvents, missedEvents } = response.data;
-
-  [...activeEvents, ...pastEvents, ...missedEvents].forEach((event) => {
-    if (event.invitees) {
-      inviteesCache[event.uri] = event.invitees;
-    }
+): Promise<PastAndMissedEventsResult> => {
+  return fetchEventsWithMeta(api, (uri, invitees) => {
+    inviteesCache[uri] = invitees;
   });
-
-  return {
-    activeEvents,
-    pastEvents,
-    missedEvents,
-  };
 };
 
 // Cria agendamento real diretamente via POST /api/calendly/bookings -> Calendly POST /invitees
@@ -127,29 +114,8 @@ export const createNativeBooking = async (
 };
 
 // Cancela evento via BFF com validação de autorização no backend
-export const cancelEvent = async (eventUri: string) => {
-  try {
-    const eventUuid = eventUri.split("/").pop();
-    if (!eventUuid) {
-      return {
-        success: false,
-        error: "Identificador de evento inválido.",
-      };
-    }
-
-    await api.post(`/api/calendly/events/${eventUuid}/cancel`, {
-      reason: "Cancelado pelo usuário",
-    });
-
-    clearInviteesCache();
-
-    return {
-      success: true,
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error.message || "Não foi possível cancelar o evento.",
-    };
-  }
+export const cancelEvent = async (
+  eventUri: string
+): Promise<CancelEventResult> => {
+  return executeCancelEvent(eventUri, api, clearInviteesCache);
 };

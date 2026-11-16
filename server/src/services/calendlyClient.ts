@@ -8,6 +8,11 @@ import {
   CreateInviteePayload,
 } from "../types/calendly";
 
+export interface PaginatedFetchResult<T> {
+  items: T[];
+  truncated: boolean;
+}
+
 export interface CalendlyClient {
   getCurrentUser(): Promise<CalendlyUser>;
   getEventTypes(userUri: string): Promise<CalendlyEventType[]>;
@@ -21,7 +26,7 @@ export interface CalendlyClient {
   getScheduledEvents(
     userUri: string,
     count?: number
-  ): Promise<CalendlyScheduledEvent[]>;
+  ): Promise<PaginatedFetchResult<CalendlyScheduledEvent>>;
   getEventInvitees(eventUuid: string): Promise<CalendlyInvitee[]>;
   cancelScheduledEvent(eventUuid: string, reason: string): Promise<void>;
 }
@@ -143,6 +148,7 @@ export function createCalendlyClient(
     async getScheduledEvents(userUri: string, count = 100) {
       const collected: CalendlyScheduledEvent[] = [];
       let pageToken: string | undefined;
+      let truncated = false;
 
       for (let page = 0; page < MAX_PAGINATION_PAGES; page += 1) {
         const res = await withRetry(() =>
@@ -164,11 +170,18 @@ export function createCalendlyClient(
         }
 
         const nextToken = res.data.pagination?.next_page_token;
-        if (!nextToken) break;
+        if (!nextToken) {
+          truncated = false;
+          break;
+        }
+        if (page === MAX_PAGINATION_PAGES - 1) {
+          truncated = true;
+          break;
+        }
         pageToken = nextToken;
       }
 
-      return collected;
+      return { items: collected, truncated };
     },
 
     async getEventInvitees(eventUuid: string) {

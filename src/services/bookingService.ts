@@ -1,6 +1,25 @@
 import { AxiosInstance } from "axios";
 import { ApiError } from "./apiClient";
-import { BookingErrorCode, BookingResult } from "./types";
+import {
+  BookingErrorCode,
+  BookingResult,
+  CalendlyEvent,
+  CancelEventResult,
+  Invitee,
+  PastAndMissedEventsResult,
+} from "./types";
+
+export function isValidCalendlyCancelUrl(url: unknown): url is string {
+  if (typeof url !== "string" || !url.trim()) return false;
+  try {
+    const parsed = new URL(url.trim());
+    if (parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
+    return host === "calendly.com" || host.endsWith(".calendly.com");
+  } catch {
+    return false;
+  }
+}
 
 export interface CreateNativeBookingParams {
   eventTypeUri: string;
@@ -140,6 +159,94 @@ export async function executeNativeBooking(
       success: false,
       code: mapped.code,
       error: mapped.message,
+    };
+  }
+}
+
+export async function fetchEventsWithMeta(
+  client: AxiosInstance,
+  cacheInvitee?: (uri: string, invitees: Invitee[]) => void
+): Promise<PastAndMissedEventsResult> {
+  const response = await client.get<PastAndMissedEventsResult>(
+    "/api/calendly/events"
+  );
+
+  const {
+    activeEvents = [],
+    pastEvents = [],
+    missedEvents = [],
+    partialErrors,
+    truncated,
+  } = response.data;
+
+  if (cacheInvitee) {
+    [...activeEvents, ...pastEvents, ...missedEvents].forEach((event) => {
+      if (event.invitees) {
+        cacheInvitee(event.uri, event.invitees);
+      }
+    });
+  }
+
+  return {
+    activeEvents,
+    pastEvents,
+    missedEvents,
+    ...(partialErrors ? { partialErrors } : {}),
+    ...(truncated ? { truncated: true } : {}),
+  };
+}
+
+export async function executeCancelEvent(
+  eventUri: string,
+  client: AxiosInstance,
+  onSuccessInvalidate?: () => void
+): Promise<CancelEventResult> {
+  try {
+    const eventUuid = eventUri.split("/").pop();
+    if (!eventUuid) {
+      return {
+        success: false,
+        code: "VALIDATION_ERROR",
+        error: "Identificador de evento inválido.",
+      };
+    }
+
+    await client.post(`/api/calendly/events/${eventUuid}/cancel`, {
+      reason: "Cancelado pelo usuário",
+    });
+
+    onSuccessInvalidate?.();
+
+    return {
+      success: true,
+    };
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      if (error.code === "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED") {
+        const rawCancelUrl = error.data?.cancelUrl;
+        const cancelUrl = isValidCalendlyCancelUrl(rawCancelUrl)
+          ? rawCancelUrl.trim()
+          : undefined;
+
+        return {
+          success: false,
+          code: "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED",
+          error: error.message,
+          ...(cancelUrl ? { cancelUrl } : {}),
+        };
+      }
+
+      return {
+        success: false,
+        code: error.code,
+        error: error.message || "Não foi possível cancelar o evento.",
+      };
+    }
+
+    return {
+      success: false,
+      code: "UNKNOWN",
+      error: "Não foi possível cancelar o evento.",
     };
   }
 }

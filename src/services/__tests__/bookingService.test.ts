@@ -2,7 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { ApiAuthProvider, createApiClient } from "../apiClient";
-import { executeNativeBooking } from "../bookingService";
+import {
+  executeCancelEvent,
+  executeNativeBooking,
+  fetchEventsWithMeta,
+  isValidCalendlyCancelUrl,
+} from "../bookingService";
 
 const EVENT_TYPE_URI =
   "https://api.calendly.com/event_types/11111111-1111-1111-1111-111111111111";
@@ -260,6 +265,100 @@ test("preserva códigos específicos UNCERTAIN_BOOKING_STATE e IDEMPOTENCY_KEY_R
         diffPayload.code,
         "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD"
       );
+    }
+  );
+});
+
+test("preserva SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED e valida domínio/protocolo de cancelUrl", async () => {
+  assert.equal(
+    isValidCalendlyCancelUrl("https://calendly.com/cancellations/inv-1"),
+    true
+  );
+  assert.equal(
+    isValidCalendlyCancelUrl("https://app.calendly.com/cancellations/inv-1"),
+    true
+  );
+  assert.equal(
+    isValidCalendlyCancelUrl("http://calendly.com/cancellations/inv-1"),
+    false
+  );
+  assert.equal(
+    isValidCalendlyCancelUrl("https://evil.com/cancellations/inv-1"),
+    false
+  );
+
+  await withMockServer(
+    (req, res) => {
+      res.writeHead(409, { "Content-Type": "application/json" });
+      if (req.url?.includes("evt-valid")) {
+        res.end(
+          JSON.stringify({
+            code: "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED",
+            error: "Reunião compartilhada.",
+            cancelUrl: "https://calendly.com/cancellations/inv-1",
+          })
+        );
+        return;
+      }
+      res.end(
+        JSON.stringify({
+          code: "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED",
+          error: "Reunião compartilhada.",
+          cancelUrl: "https://phishing.example.com/cancel",
+        })
+      );
+    },
+    async (baseUrl) => {
+      const client = createTestClient(baseUrl);
+
+      const validRes = await executeCancelEvent(
+        "https://api.calendly.com/scheduled_events/evt-valid",
+        client
+      );
+      assert.equal(validRes.success, false);
+      assert.equal(
+        validRes.code,
+        "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED"
+      );
+      assert.equal(
+        validRes.cancelUrl,
+        "https://calendly.com/cancellations/inv-1"
+      );
+
+      const untrustedRes = await executeCancelEvent(
+        "https://api.calendly.com/scheduled_events/evt-evil",
+        client
+      );
+      assert.equal(untrustedRes.success, false);
+      assert.equal(
+        untrustedRes.code,
+        "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED"
+      );
+      assert.equal(untrustedRes.cancelUrl, undefined);
+    }
+  );
+});
+
+test("fetchEventsWithMeta propaga partialErrors e truncated na listagem da agenda", async () => {
+  await withMockServer(
+    (_req, res) => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          activeEvents: [],
+          pastEvents: [],
+          missedEvents: [],
+          partialErrors: 2,
+          truncated: true,
+        })
+      );
+    },
+    async (baseUrl) => {
+      const client = createTestClient(baseUrl);
+      const res = await fetchEventsWithMeta(client);
+      assert.equal(res.partialErrors, 2);
+      assert.equal(res.truncated, true);
+      assert.equal(res.activeEvents.length, 0);
     }
   );
 });

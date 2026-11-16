@@ -109,6 +109,7 @@ export function Home() {
   const [nextMeeting, setNextMeeting] = useState<CalendlyEvent | null>(null);
   const [loadingMeeting, setLoadingMeeting] = useState(true);
   const [meetingError, setMeetingError] = useState<string | null>(null);
+  const [partialWarning, setPartialWarning] = useState<string | null>(null);
 
   const isCompactScreen = width < 360;
   const showHeroIllustration = width >= 330;
@@ -130,6 +131,7 @@ export function Home() {
     try {
       setLoadingMeeting(true);
       setMeetingError(null);
+      setPartialWarning(null);
 
       const calendlyUser = await getUserInfo();
       if (!calendlyUser) {
@@ -138,10 +140,16 @@ export function Home() {
         return;
       }
 
-      const { activeEvents } = await getPastAndMissedEvents(
-        calendlyUser.uri,
-        user.email
-      );
+      const { activeEvents, partialErrors, truncated } =
+        await getPastAndMissedEvents(calendlyUser.uri, user.email);
+
+      if (partialErrors || truncated) {
+        setPartialWarning(
+          truncated
+            ? "Exibindo resultados parciais (limite de paginação atingido)."
+            : "Algumas reuniões não puderam ser verificadas agora."
+        );
+      }
 
       if (activeEvents.length > 0) {
         const sorted = [...activeEvents].sort(
@@ -284,9 +292,14 @@ export function Home() {
             </EmptyAcademicGraphic>
 
             <EmptyTextCol>
-              <EmptyTitle>Nenhuma orientação marcada</EmptyTitle>
+              <EmptyTitle>
+                {partialWarning
+                  ? "Agenda carregada parcialmente"
+                  : "Nenhuma orientação marcada"}
+              </EmptyTitle>
               <EmptySubtitle>
-                Que tal reservar o próximo encontro do seu TCC?
+                {partialWarning ||
+                  "Que tal reservar o próximo encontro do seu TCC?"}
               </EmptySubtitle>
             </EmptyTextCol>
           </EmptyIllustrationRow>
@@ -368,6 +381,19 @@ export function Home() {
                     />
                     <MeetingMetaText numberOfLines={1}>
                       {locationLabel}
+                    </MeetingMetaText>
+                  </MeetingMetaItem>
+                )}
+
+                {partialWarning && (
+                  <MeetingMetaItem>
+                    <Feather
+                      name="info"
+                      size={12}
+                      color={theme.colors.text_secondary}
+                    />
+                    <MeetingMetaText numberOfLines={2}>
+                      {partialWarning}
                     </MeetingMetaText>
                   </MeetingMetaItem>
                 )}

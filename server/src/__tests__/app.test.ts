@@ -108,22 +108,25 @@ function createMockCalendlyClient(
       };
     },
     async getScheduledEvents() {
-      return [
-        {
-          uri: "https://api.calendly.com/scheduled_events/evt-1",
-          name: "Orientação TCC",
-          status: "active",
-          start_time: "2099-11-20T17:00:00Z",
-          end_time: "2099-11-20T17:30:00Z",
-        },
-        {
-          uri: "https://api.calendly.com/scheduled_events/evt-2",
-          name: "Outro Aluno",
-          status: "active",
-          start_time: "2099-11-21T17:00:00Z",
-          end_time: "2099-11-21T17:30:00Z",
-        },
-      ];
+      return {
+        items: [
+          {
+            uri: "https://api.calendly.com/scheduled_events/evt-1",
+            name: "Orientação TCC",
+            status: "active",
+            start_time: "2099-11-20T17:00:00Z",
+            end_time: "2099-11-20T17:30:00Z",
+          },
+          {
+            uri: "https://api.calendly.com/scheduled_events/evt-2",
+            name: "Outro Aluno",
+            status: "active",
+            start_time: "2099-11-21T17:00:00Z",
+            end_time: "2099-11-21T17:30:00Z",
+          },
+        ],
+        truncated: false,
+      };
     },
     async getEventInvitees(eventUuid: string) {
       if (eventUuid === "evt-1") {
@@ -672,15 +675,64 @@ test("consulta paginada de eventos via page_token e tratamento de erros parciais
       timeoutMs: 3000,
     });
 
-    const events = await client.getScheduledEvents(
+    const result = await client.getScheduledEvents(
       "https://api.calendly.com/users/advisor-1"
     );
-    assert.equal(events.length, 2);
-    assert.equal(events[0].name, "Página 1");
-    assert.equal(events[1].name, "Página 2");
+    assert.equal(result.truncated, false);
+    assert.equal(result.items.length, 2);
+    assert.equal(result.items[0].name, "Página 1");
+    assert.equal(result.items[1].name, "Página 2");
   } finally {
     await new Promise<void>((resolve, reject) =>
       mockCalendlyServer.close((e) => (e ? reject(e) : resolve()))
+    );
+  }
+
+  // Simula truncamento ao atingir MAX_PAGINATION_PAGES (10 páginas) com next_page_token ainda presente
+  const alwaysMorePagesServer = http.createServer((req, res) => {
+    const url = new URL(req.url || "/", "http://127.0.0.1");
+    if (url.pathname === "/scheduled_events") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          collection: [
+            {
+              uri: "https://api.calendly.com/scheduled_events/evt-page",
+              name: "Evento Paginado",
+              status: "active",
+              start_time: "2099-11-20T17:00:00Z",
+              end_time: "2099-11-20T17:30:00Z",
+            },
+          ],
+          pagination: { next_page_token: "always-has-next" },
+        })
+      );
+      return;
+    }
+    res.writeHead(404);
+    res.end();
+  });
+
+  await new Promise<void>((resolve) =>
+    alwaysMorePagesServer.listen(0, "127.0.0.1", resolve)
+  );
+  const truncAddr = alwaysMorePagesServer.address();
+  assert.ok(truncAddr && typeof truncAddr !== "string");
+
+  try {
+    const truncClient = createCalendlyClient({
+      baseURL: `http://127.0.0.1:${truncAddr.port}`,
+      token: "test-token",
+      timeoutMs: 3000,
+    });
+    const truncResult = await truncClient.getScheduledEvents(
+      "https://api.calendly.com/users/advisor-1"
+    );
+    assert.equal(truncResult.truncated, true);
+    assert.equal(truncResult.items.length, 10);
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      alwaysMorePagesServer.close((e) => (e ? reject(e) : resolve()))
     );
   }
 
@@ -689,6 +741,27 @@ test("consulta paginada de eventos via page_token e tratamento de erros parciais
     config: baseConfig,
     idempotencyStore: createIdempotencyStore(),
     calendlyClient: createMockCalendlyClient({
+      async getScheduledEvents() {
+        return {
+          items: [
+            {
+              uri: "https://api.calendly.com/scheduled_events/evt-1",
+              name: "Orientação TCC",
+              status: "active",
+              start_time: "2099-11-20T17:00:00Z",
+              end_time: "2099-11-20T17:30:00Z",
+            },
+            {
+              uri: "https://api.calendly.com/scheduled_events/evt-2",
+              name: "Outro Aluno",
+              status: "active",
+              start_time: "2099-11-21T17:00:00Z",
+              end_time: "2099-11-21T17:30:00Z",
+            },
+          ],
+          truncated: true,
+        };
+      },
       async getEventInvitees(uuid) {
         if (uuid === "evt-2") {
           throw new Error("Erro transitório em evento de terceiro");
@@ -713,9 +786,11 @@ test("consulta paginada de eventos via page_token e tratamento de erros parciais
     const body = (await res.json()) as {
       activeEvents: Array<{ uri: string }>;
       partialErrors?: number;
+      truncated?: boolean;
     };
     assert.equal(body.activeEvents.length, 1);
     assert.ok(body.activeEvents[0].uri.endsWith("/evt-1"));
     assert.equal(body.partialErrors, 1);
+    assert.equal(body.truncated, true);
   });
 });

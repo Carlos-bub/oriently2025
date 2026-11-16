@@ -9,12 +9,19 @@ export interface ApiAuthProvider {
 export class ApiError extends Error {
   status?: number;
   code: string;
+  data?: Record<string, unknown>;
 
-  constructor(message: string, code = "UNKNOWN", status?: number) {
+  constructor(
+    message: string,
+    code = "UNKNOWN",
+    status?: number,
+    data?: Record<string, unknown>
+  ) {
     super(message);
     this.name = "ApiError";
     this.code = code;
     this.status = status;
+    this.data = data;
   }
 }
 
@@ -47,10 +54,15 @@ export function mapHttpError(error: unknown): ApiError {
     return error;
   }
 
-  const axiosError = error as AxiosError<{ error?: string; code?: string }>;
+  const axiosError = error as AxiosError<{
+    error?: string;
+    code?: string;
+    [key: string]: unknown;
+  }>;
   const status = axiosError.response?.status;
-  const serverMessage = axiosError.response?.data?.error;
-  const serverCode = axiosError.response?.data?.code;
+  const responseData = axiosError.response?.data;
+  const serverMessage = responseData?.error;
+  const serverCode = responseData?.code;
 
   if (!axiosError.response) {
     if (axiosError.code === "ECONNABORTED") {
@@ -92,7 +104,8 @@ export function mapHttpError(error: unknown): ApiError {
   return new ApiError(
     serverMessage || "Erro ao comunicar com o servidor.",
     serverCode || "SERVER_ERROR",
-    status
+    status,
+    responseData
   );
 }
 

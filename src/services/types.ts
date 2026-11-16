@@ -48,6 +48,21 @@ export interface User {
     code?: BookingErrorCode;
   }
 
+  export interface CancelEventResult {
+    success: boolean;
+    code?: string;
+    error?: string;
+    cancelUrl?: string;
+  }
+
+  export interface PastAndMissedEventsResult {
+    activeEvents: CalendlyEvent[];
+    pastEvents: CalendlyEvent[];
+    missedEvents: CalendlyEvent[];
+    partialErrors?: number;
+    truncated?: boolean;
+  }
+
   export interface Invitee {
     uri: string;
     email: string;

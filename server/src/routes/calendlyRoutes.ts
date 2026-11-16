@@ -243,7 +243,10 @@ export function createCalendlyRouter({
 
     try {
       const owner = await calendly.getCurrentUser();
-      const events = await calendly.getScheduledEvents(owner.uri, 100);
+      const { items: events, truncated } = await calendly.getScheduledEvents(
+        owner.uri,
+        100
+      );
 
       const settled = await mapWithConcurrencyLimit(
         events,
@@ -296,6 +299,7 @@ export function createCalendlyRouter({
         pastEvents,
         missedEvents,
         ...(partialErrors > 0 ? { partialErrors } : {}),
+        ...(truncated ? { truncated: true } : {}),
       });
     } catch (error) {
       handleCalendlyError(error, res, "Erro ao listar agendamentos.");
