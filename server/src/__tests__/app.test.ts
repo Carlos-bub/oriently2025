@@ -1,10 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { createApp } from "../app";
 import { ServerConfig } from "../config/env";
 import { GoogleTokenVerifier } from "../middleware/auth";
 import { CalendlyClient } from "../services/calendlyClient";
+import { createIdempotencyStore } from "../services/idempotencyStore";
 import {
   AuthenticatedUser,
   CalendlyInvitee,
@@ -409,5 +413,141 @@ test("trata horário indisponível (409), timeout (504) e rate limit (429)", asy
       }),
     });
     assert.equal(timeoutRes.status, 504);
+
+    // Nova tentativa após resultado incerto não deve chamar POST /invitees novamente
+    const retryUncertain = await fetch(`${baseUrl}/api/calendly/bookings`, {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer valid-token",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        eventTypeUri: ALLOWED_EVENT_TYPE,
+        startTimeUtc: "2026-11-20T17:00:00Z",
+      }),
+    });
+    assert.equal(retryUncertain.status, 409);
+    const retryBody = (await retryUncertain.json()) as { code: string };
+    assert.equal(retryBody.code, "UNCERTAIN_BOOKING_STATE");
   });
+});
+
+test("rejeita reutilização de Idempotency-Key com payload diferente (422), bloqueia concorrência (409) e persiste após reinício", async () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "oriently-idem-"));
+  const storePath = path.join(tmpDir, "idempotency.json");
+
+  let releaseSlowRequest!: () => void;
+  const slowGate = new Promise<void>((resolve) => {
+    releaseSlowRequest = resolve;
+  });
+
+  let inviteeCalls = 0;
+
+  try {
+    const store1 = createIdempotencyStore({ filePath: storePath });
+    const app1 = createApp({
+      config: baseConfig,
+      idempotencyStore: store1,
+      calendlyClient: createMockCalendlyClient({
+        async createInvitee(payload) {
+          inviteeCalls += 1;
+          await slowGate;
+          return {
+            uri: "https://api.calendly.com/scheduled_events/evt-1/invitees/inv-1",
+            email: payload.invitee.email,
+            name: payload.invitee.name,
+            status: "active",
+            event: "https://api.calendly.com/scheduled_events/evt-1",
+          };
+        },
+      }),
+      tokenVerifier: createMockVerifier({ "valid-token": studentUser }),
+    });
+
+    await withServer(app1, async (baseUrl) => {
+      // Dispara 2 requisições simultâneas com mesma chave e payload
+      const p1 = fetch(`${baseUrl}/api/calendly/bookings`, {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer valid-token",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "concurrent-key-1",
+        },
+        body: JSON.stringify({
+          eventTypeUri: ALLOWED_EVENT_TYPE,
+          startTimeUtc: "2026-11-20T17:00:00Z",
+        }),
+      });
+
+      // Pequena pausa para garantir que p1 adquiriu o lock
+      await new Promise((r) => setTimeout(r, 20));
+
+      const p2 = await fetch(`${baseUrl}/api/calendly/bookings`, {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer valid-token",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "concurrent-key-1",
+        },
+        body: JSON.stringify({
+          eventTypeUri: ALLOWED_EVENT_TYPE,
+          startTimeUtc: "2026-11-20T17:00:00Z",
+        }),
+      });
+      assert.equal(p2.status, 409);
+
+      releaseSlowRequest();
+      const r1 = await p1;
+      assert.equal(r1.status, 201);
+      assert.equal(inviteeCalls, 1);
+
+      // Mesma chave com payload diferente -> 422
+      const diffPayload = await fetch(`${baseUrl}/api/calendly/bookings`, {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer valid-token",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "concurrent-key-1",
+        },
+        body: JSON.stringify({
+          eventTypeUri: ALLOWED_EVENT_TYPE,
+          startTimeUtc: "2026-11-21T18:00:00Z",
+        }),
+      });
+      assert.equal(diffPayload.status, 422);
+    });
+
+    // Simula reinício do servidor recarregando o store do disco
+    const store2 = createIdempotencyStore({ filePath: storePath });
+    const app2 = createApp({
+      config: baseConfig,
+      idempotencyStore: store2,
+      calendlyClient: createMockCalendlyClient({
+        async createInvitee() {
+          throw new Error("Não deveria chamar POST /invitees após reinício");
+        },
+      }),
+      tokenVerifier: createMockVerifier({ "valid-token": studentUser }),
+    });
+
+    await withServer(app2, async (baseUrl) => {
+      const afterRestart = await fetch(`${baseUrl}/api/calendly/bookings`, {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer valid-token",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "concurrent-key-1",
+        },
+        body: JSON.stringify({
+          eventTypeUri: ALLOWED_EVENT_TYPE,
+          startTimeUtc: "2026-11-20T17:00:00Z",
+        }),
+      });
+      assert.equal(afterRestart.status, 201);
+      const body = (await afterRestart.json()) as { deduplicated?: boolean };
+      assert.equal(body.deduplicated, true);
+    });
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 });

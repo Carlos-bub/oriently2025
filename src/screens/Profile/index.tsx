@@ -30,6 +30,7 @@ import {
 import { RFValue } from "react-native-responsive-fontsize";
 import theme from "src/global/styles/theme";
 import { useFocusEffect } from "@react-navigation/native";
+import { getFriendlyApiErrorMessage } from "../../services/apiClient";
 import {
   getUserInfo,
   getPastAndMissedEvents,
@@ -44,6 +45,7 @@ export function Profile() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [cancelingUri, setCancelingUri] = useState<string | null>(null);
+  const [eventsError, setEventsError] = useState<string | null>(null);
   const [events, setEvents] = useState<{
     activeEvents: CalendlyEvent[];
     pastEvents: CalendlyEvent[];
@@ -59,6 +61,7 @@ export function Profile() {
   const loadEvents = useCallback(
     async (isRefresh = false) => {
       try {
+        setEventsError(null);
         if (isRefresh) {
           setRefreshing(true);
           clearInviteesCache();
@@ -66,12 +69,12 @@ export function Profile() {
           setLoading(true);
         }
 
-        const calendlyUser = await getUserInfo();
-
         if (!user?.email) {
-          RNAlert.alert("Erro", "Usuário não está logado corretamente.");
+          setEventsError("Usuário não está logado corretamente.");
           return;
         }
+
+        const calendlyUser = await getUserInfo();
 
         if (calendlyUser) {
           const result = await getPastAndMissedEvents(
@@ -91,11 +94,16 @@ export function Profile() {
             missedEvents: result.missedEvents.sort(sortByDate),
           });
         } else {
-          RNAlert.alert("Erro", "Usuário do Calendly não encontrado.");
+          setEventsError("Não foi possível identificar a agenda do orientador.");
         }
       } catch (error) {
         console.error("Erro ao carregar eventos:", error);
-        RNAlert.alert("Erro", "Não foi possível carregar os eventos.");
+        setEventsError(
+          getFriendlyApiErrorMessage(
+            error,
+            "Não foi possível carregar os agendamentos."
+          )
+        );
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -305,7 +313,20 @@ export function Profile() {
         }
         ListEmptyComponent={
           <EmptyContainer>
-            <EmptyText>Nenhum agendamento encontrado.</EmptyText>
+            <EmptyText>
+              {eventsError || "Nenhum agendamento encontrado."}
+            </EmptyText>
+            {eventsError && (
+              <CancelButton
+                onPress={() => loadEvents()}
+                style={{
+                  backgroundColor: theme.colors.primary,
+                  marginTop: RFValue(12),
+                }}
+              >
+                <CancelButtonText>Tentar novamente</CancelButtonText>
+              </CancelButton>
+            )}
           </EmptyContainer>
         }
       />

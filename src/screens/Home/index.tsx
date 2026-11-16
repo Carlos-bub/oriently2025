@@ -6,6 +6,7 @@ import { Feather } from "@expo/vector-icons";
 import { useTheme } from "styled-components/native";
 
 import { useAuth } from "../../contexts/AuthContext";
+import { getFriendlyApiErrorMessage } from "../../services/apiClient";
 import {
   getUserInfo,
   getPastAndMissedEvents,
@@ -153,7 +154,12 @@ export function Home() {
       }
     } catch (error) {
       console.error("Erro ao carregar próxima reunião:", error);
-      setMeetingError("Erro ao buscar sua próxima orientação.");
+      setMeetingError(
+        getFriendlyApiErrorMessage(
+          error,
+          "Erro ao buscar sua próxima orientação."
+        )
+      );
       setNextMeeting(null);
     } finally {
       setLoadingMeeting(false);

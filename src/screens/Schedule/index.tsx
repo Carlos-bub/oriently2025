@@ -17,6 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { useTheme } from "styled-components/native";
 
 import "../../utils/calendarLocale";
+import { getFriendlyApiErrorMessage } from "../../services/apiClient";
 import {
   getUserInfo,
   getEventTypes,
@@ -87,6 +88,7 @@ export function Schedule() {
   const [selectedHour, setSelectedHour] = useState<string | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
   const [loadingTypes, setLoadingTypes] = useState(true);
+  const [typesError, setTypesError] = useState<string | null>(null);
   const [loadingTimes, setLoadingTimes] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [timesError, setTimesError] = useState<string | null>(null);
@@ -120,37 +122,40 @@ export function Schedule() {
     }
   }, [isFocused, resetState]);
 
+  const fetchUserAndEventType = useCallback(async () => {
+    try {
+      setLoadingTypes(true);
+      setTypesError(null);
+      const calendlyUser = await getUserInfo();
+      if (calendlyUser) {
+        const types = await getEventTypes(calendlyUser.uri);
+        const activeTypes = types.filter((t) => t.active !== false);
+        setEventTypes(activeTypes);
+        if (activeTypes.length > 0) {
+          setEventTypeUri((prev) =>
+            prev && activeTypes.some((t) => t.uri === prev)
+              ? prev
+              : activeTypes[0].uri
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      setTypesError(
+        getFriendlyApiErrorMessage(
+          error,
+          "Não foi possível carregar os tipos de orientação."
+        )
+      );
+    } finally {
+      setLoadingTypes(false);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      const fetchUserAndEventType = async () => {
-        try {
-          setLoadingTypes(true);
-          const calendlyUser = await getUserInfo();
-          if (calendlyUser) {
-            const types = await getEventTypes(calendlyUser.uri);
-            const activeTypes = types.filter((t) => t.active !== false);
-            setEventTypes(activeTypes);
-            if (activeTypes.length > 0) {
-              setEventTypeUri((prev) =>
-                prev && activeTypes.some((t) => t.uri === prev)
-                  ? prev
-                  : activeTypes[0].uri
-              );
-            }
-          }
-        } catch (error) {
-          console.error("Erro ao carregar dados:", error);
-          Alert.alert(
-            "Erro",
-            "Não foi possível carregar os tipos de orientação."
-          );
-        } finally {
-          setLoadingTypes(false);
-        }
-      };
-
       fetchUserAndEventType();
-    }, [])
+    }, [fetchUserAndEventType])
   );
 
   const fetchAvailableTimes = useCallback(async () => {
@@ -166,7 +171,12 @@ export function Schedule() {
       setHours(availableTimes);
     } catch (error) {
       console.error("Erro ao buscar horários:", error);
-      setTimesError("Não foi possível carregar os horários disponíveis.");
+      setTimesError(
+        getFriendlyApiErrorMessage(
+          error,
+          "Não foi possível carregar os horários disponíveis."
+        )
+      );
       setHours([]);
     } finally {
       setLoadingTimes(false);
@@ -398,15 +408,22 @@ export function Schedule() {
             <HoursSection>
               <StateBox>
                 <Feather
-                  name="calendar"
+                  name={typesError ? "alert-circle" : "calendar"}
                   size={20}
-                  color={theme.colors.primary}
+                  color={typesError ? theme.colors.cancel : theme.colors.primary}
                 />
                 <StateText>
                   {loadingTypes
                     ? "Carregando agenda do orientador..."
-                    : "Selecione uma data no calendário acima para ver os horários disponíveis."}
+                    : typesError
+                      ? typesError
+                      : "Selecione uma data no calendário acima para ver os horários disponíveis."}
                 </StateText>
+                {typesError && (
+                  <RetryButton onPress={fetchUserAndEventType}>
+                    <RetryButtonText>Tentar novamente</RetryButtonText>
+                  </RetryButton>
+                )}
               </StateBox>
             </HoursSection>
           ) : (

@@ -1,7 +1,12 @@
+import path from "node:path";
 import express, { Express } from "express";
 import cors from "cors";
 import { ServerConfig } from "./config/env";
 import { CalendlyClient } from "./services/calendlyClient";
+import {
+  createIdempotencyStore,
+  IdempotencyStore,
+} from "./services/idempotencyStore";
 import {
   createAuthMiddleware,
   GoogleTokenVerifier,
@@ -13,6 +18,7 @@ export interface AppDependencies {
   config: ServerConfig;
   calendlyClient: CalendlyClient;
   tokenVerifier: GoogleTokenVerifier;
+  idempotencyStore?: IdempotencyStore;
   rateLimitMaxRequests?: number;
   rateLimitWindowMs?: number;
 }
@@ -21,6 +27,7 @@ export function createApp({
   config,
   calendlyClient,
   tokenVerifier,
+  idempotencyStore,
   rateLimitMaxRequests = 60,
   rateLimitWindowMs = 60_000,
 }: AppDependencies): Express {
@@ -58,6 +65,12 @@ export function createApp({
     maxRequests: rateLimitMaxRequests,
   });
 
+  const resolvedIdempotencyStore =
+    idempotencyStore ||
+    createIdempotencyStore({
+      filePath: path.resolve(process.cwd(), ".data", "idempotency.json"),
+    });
+
   app.use(
     "/api/calendly",
     authMiddleware,
@@ -65,6 +78,7 @@ export function createApp({
     createCalendlyRouter({
       calendly: calendlyClient,
       allowedEventTypeUris: config.allowedEventTypeUris,
+      idempotencyStore: resolvedIdempotencyStore,
     })
   );
 

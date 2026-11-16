@@ -3,6 +3,10 @@ import { z } from "zod";
 import { AuthenticatedRequest } from "../middleware/auth";
 import { CalendlyClient } from "../services/calendlyClient";
 import {
+  createIdempotencyStore,
+  IdempotencyStore,
+} from "../services/idempotencyStore";
+import {
   BookingSummary,
   CalendlyInvitee,
   CalendlyScheduledEvent,
@@ -34,14 +38,6 @@ const createBookingBodySchema = z.object({
 const cancelBodySchema = z.object({
   reason: z.string().trim().min(1).max(300).optional(),
 });
-
-interface IdempotencyEntry {
-  status: "in_progress" | "completed";
-  createdAt: number;
-  booking?: BookingSummary;
-}
-
-const IDEMPOTENCY_TTL_MS = 5 * 60 * 1000;
 
 function getLocationLabel(location?: CalendlyScheduledEvent["location"]): string | undefined {
   if (!location) return undefined;
@@ -103,23 +99,15 @@ function handleCalendlyError(error: any, res: Response, fallback: string) {
 export interface CalendlyRouterDeps {
   calendly: CalendlyClient;
   allowedEventTypeUris: string[];
+  idempotencyStore?: IdempotencyStore;
 }
 
 export function createCalendlyRouter({
   calendly,
   allowedEventTypeUris,
+  idempotencyStore = createIdempotencyStore(),
 }: CalendlyRouterDeps): Router {
   const router = Router();
-  const idempotencyStore = new Map<string, IdempotencyEntry>();
-
-  const pruneIdempotency = () => {
-    const now = Date.now();
-    for (const [key, entry] of idempotencyStore.entries()) {
-      if (now - entry.createdAt > IDEMPOTENCY_TTL_MS) {
-        idempotencyStore.delete(key);
-      }
-    }
-  };
 
   const resolveAllowedEventTypes = async (): Promise<Set<string>> => {
     if (allowedEventTypeUris.length > 0) {
@@ -285,22 +273,44 @@ export function createCalendlyRouter({
     const idempotencyKey = `${authenticatedUser.sub}:${
       clientKey || `${eventTypeUri}:${startTimeUtc}`
     }`;
+    const payloadHash = idempotencyStore.hashPayload({
+      eventTypeUri,
+      startTimeUtc,
+      timezone: timezone || "America/Sao_Paulo",
+      locationKind: locationKind || null,
+    });
 
-    pruneIdempotency();
-    const existing = idempotencyStore.get(idempotencyKey);
-    if (existing) {
-      if (existing.status === "in_progress") {
-        res.status(409).json({
-          code: "BOOKING_IN_PROGRESS",
-          error: "Já existe uma solicitação de agendamento em andamento para este horário.",
+    const lock = idempotencyStore.acquireLock(idempotencyKey, payloadHash);
+    if (!lock.ok) {
+      if (lock.reason === "DIFFERENT_PAYLOAD") {
+        res.status(422).json({
+          code: "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD",
+          error:
+            "A mesma chave de idempotência foi reutilizada com dados diferentes.",
         });
         return;
       }
-      if (existing.status === "completed" && existing.booking) {
+      if (lock.reason === "IN_PROGRESS") {
+        res.status(409).json({
+          code: "BOOKING_IN_PROGRESS",
+          error:
+            "Já existe uma solicitação de agendamento em andamento para este horário.",
+        });
+        return;
+      }
+      if (lock.reason === "UNCERTAIN") {
+        res.status(409).json({
+          code: "UNCERTAIN_BOOKING_STATE",
+          error:
+            "A tentativa anterior teve resultado incerto (timeout ou falha de rede). Verifique sua agenda antes de tentar novamente.",
+        });
+        return;
+      }
+      if (lock.reason === "ALREADY_COMPLETED" && lock.record.booking) {
         res.status(201).json({
           success: true,
           deduplicated: true,
-          booking: existing.booking,
+          booking: lock.record.booking,
         });
         return;
       }
@@ -309,17 +319,13 @@ export function createCalendlyRouter({
     try {
       const allowedSet = await resolveAllowedEventTypes();
       if (!allowedSet.has(eventTypeUri)) {
+        idempotencyStore.releaseOnDefiniteError(idempotencyKey);
         res.status(403).json({
           code: "FORBIDDEN_EVENT_TYPE",
           error: "Tipo de evento não permitido.",
         });
         return;
       }
-
-      idempotencyStore.set(idempotencyKey, {
-        status: "in_progress",
-        createdAt: Date.now(),
-      });
 
       const payload: CreateInviteePayload = {
         event_type: eventTypeUri,
@@ -357,22 +363,24 @@ export function createCalendlyRouter({
         status: scheduledEvent?.status || inviteeResource.status || "active",
       };
 
-      idempotencyStore.set(idempotencyKey, {
-        status: "completed",
-        createdAt: Date.now(),
-        booking,
-      });
+      idempotencyStore.markCompleted(idempotencyKey, payloadHash, booking);
 
       res.status(201).json({
         success: true,
         booking,
       });
     } catch (error: any) {
-      const isTimeout =
-        error.code === "ECONNABORTED" || error.message?.includes("timeout");
-      if (!isTimeout) {
-        idempotencyStore.delete(idempotencyKey);
+      const isUncertain =
+        !error.response ||
+        error.code === "ECONNABORTED" ||
+        error.message?.includes("timeout");
+
+      if (isUncertain) {
+        idempotencyStore.markUncertain(idempotencyKey, payloadHash);
+      } else {
+        idempotencyStore.releaseOnDefiniteError(idempotencyKey);
       }
+
       handleCalendlyError(
         error,
         res,

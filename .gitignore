@@ -54,6 +54,7 @@ yarn-error.*
 # backend server
 server/node_modules/
 server/.env
+server/.data/
 
 # mobile test build
 .test-dist/

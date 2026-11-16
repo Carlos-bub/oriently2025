@@ -96,6 +96,35 @@ export function mapHttpError(error: unknown): ApiError {
   );
 }
 
+export function getFriendlyApiErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  if (error instanceof ApiError) {
+    if (error.code === "CONFIG_ERROR") {
+      return "Servidor do aplicativo não configurado. Verifique EXPO_PUBLIC_BACKEND_URL.";
+    }
+    if (error.code === "UNAUTHORIZED" || error.status === 401) {
+      return "Sua sessão expirou. Faça login novamente com o Google.";
+    }
+    if (error.code === "FORBIDDEN" || error.status === 403) {
+      return "Você não tem permissão para acessar estes dados.";
+    }
+    if (error.code === "NETWORK_ERROR" || error.code === "TIMEOUT") {
+      return "Sem conexão com o servidor. Verifique sua rede e tente novamente.";
+    }
+    if (error.code === "RATE_LIMIT" || error.status === 429) {
+      return "Limite de requisições atingido. Aguarde alguns instantes.";
+    }
+    if (error.status && error.status >= 500) {
+      return "O servidor está temporariamente indisponível. Tente novamente.";
+    }
+    return error.message || fallback;
+  }
+
+  return fallback;
+}
+
 export function createApiClient(
   baseURL: string,
   authRef: { current: ApiAuthProvider | null }

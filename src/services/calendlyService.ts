@@ -42,28 +42,18 @@ export const seedInviteesCacheForTest = (uri: string, invitees: Invitee[]) => {
   inviteesCache[uri] = invitees;
 };
 
-// Busca informações do orientador via BFF
+// Busca informações do orientador via BFF (propaga erros reais de rede/auth/servidor)
 export const getUserInfo = async (): Promise<User | null> => {
-  try {
-    const response = await api.get<{ resource: User }>("/api/calendly/me");
-    return response.data.resource;
-  } catch (error) {
-    console.error("Erro ao buscar usuário:", error);
-    return null;
-  }
+  const response = await api.get<{ resource: User | null }>("/api/calendly/me");
+  return response.data.resource;
 };
 
-// Busca tipos de eventos permitidos via BFF
+// Busca tipos de eventos permitidos via BFF (propaga erros reais)
 export const getEventTypes = async (_userUri?: string): Promise<EventType[]> => {
-  try {
-    const response = await api.get<{ collection: EventType[] }>(
-      "/api/calendly/event-types"
-    );
-    return response.data.collection;
-  } catch (error) {
-    console.error("Erro ao buscar eventos:", error);
-    return [];
-  }
+  const response = await api.get<{ collection: EventType[] }>(
+    "/api/calendly/event-types"
+  );
+  return response.data.collection || [];
 };
 
 // Busca horários disponíveis via BFF preservando os timestamps ISO UTC originais
@@ -102,35 +92,30 @@ export const getEventInvitees = async (
   return [];
 };
 
-// Busca todos os eventos do usuário autenticado via BFF (ativos, passados e cancelados)
+// Busca todos os eventos do usuário autenticado via BFF (propaga erros reais)
 export const getPastAndMissedEvents = async (
   _userUri?: string,
   _currentUserEmail?: string
 ) => {
-  try {
-    const response = await api.get<{
-      activeEvents: CalendlyEvent[];
-      pastEvents: CalendlyEvent[];
-      missedEvents: CalendlyEvent[];
-    }>("/api/calendly/events");
+  const response = await api.get<{
+    activeEvents: CalendlyEvent[];
+    pastEvents: CalendlyEvent[];
+    missedEvents: CalendlyEvent[];
+  }>("/api/calendly/events");
 
-    const { activeEvents, pastEvents, missedEvents } = response.data;
+  const { activeEvents, pastEvents, missedEvents } = response.data;
 
-    [...activeEvents, ...pastEvents, ...missedEvents].forEach((event) => {
-      if (event.invitees) {
-        inviteesCache[event.uri] = event.invitees;
-      }
-    });
+  [...activeEvents, ...pastEvents, ...missedEvents].forEach((event) => {
+    if (event.invitees) {
+      inviteesCache[event.uri] = event.invitees;
+    }
+  });
 
-    return {
-      activeEvents,
-      pastEvents,
-      missedEvents,
-    };
-  } catch (error) {
-    console.error("Erro ao buscar eventos:", error);
-    return { activeEvents: [], pastEvents: [], missedEvents: [] };
-  }
+  return {
+    activeEvents,
+    pastEvents,
+    missedEvents,
+  };
 };
 
 // Cria agendamento real diretamente via POST /api/calendly/bookings -> Calendly POST /invitees
