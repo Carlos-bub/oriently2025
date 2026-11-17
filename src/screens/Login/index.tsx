@@ -7,30 +7,32 @@ import { useTheme } from "styled-components/native";
 
 import { useAuth } from "../../contexts/AuthContext";
 import { useDialog } from "../../contexts/DialogContext";
+import { AcademicBadge, BrandMark } from "../../components/AcademicFlow";
 import {
   Container,
   ScrollContent,
   MainColumn,
-  BrandRow,
-  BrandIconBox,
-  BrandName,
-  HeroComposition,
-  HeroBackdropHalo,
-  OrbitDotBlue,
-  OrbitDotLavender,
+  BrandHeader,
+  HeroScene,
+  ConcentricArcOuter,
+  ConcentricArcInner,
+  TrajectoryTrackLine,
+  WaypointDotBlue,
+  WaypointDotLavender,
   FloatingCalendarCard,
   FloatingCalendarHeader,
   CalendarRingDot,
   FloatingCalendarGrid,
   GridRow,
   GridCell,
-  FloatingProgressCard,
-  ProgressCardHeader,
-  ProgressPill,
-  ProgressPillText,
+  FloatingOrientationCard,
+  OrientationCardHeader,
+  OrientationPill,
+  OrientationPillText,
   AcademicIconSmall,
   SkeletonLineShort,
   SkeletonLineLong,
+  CenterCompassRing,
   CenterCompassBadge,
   TextBlock,
   Title,
@@ -49,10 +51,11 @@ export function LoginScreen() {
   const { signIn } = useAuth();
   const { showDialog } = useDialog();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const theme = useTheme();
 
   const isCompact = width < 360;
+  const isShortScreen = height < 680;
 
   useEffect(() => {
     const checkGoogleSigninConfig = async () => {
@@ -164,17 +167,17 @@ export function LoginScreen() {
         }}
       >
         <MainColumn>
-          <BrandRow>
-            <BrandIconBox>
-              <Feather name="compass" size={17} color={theme.colors.primary} />
-            </BrandIconBox>
-            <BrandName>Oriently</BrandName>
-          </BrandRow>
+          <BrandHeader>
+            <BrandMark showJourneySignature />
+            <AcademicBadge label="Em direção ao TCC" />
+          </BrandHeader>
 
-          <HeroComposition accessible={false}>
-            <HeroBackdropHalo />
-            <OrbitDotBlue />
-            <OrbitDotLavender />
+          <HeroScene isShortScreen={isShortScreen} accessible={false}>
+            <ConcentricArcOuter />
+            <ConcentricArcInner />
+            <TrajectoryTrackLine />
+            <WaypointDotBlue />
+            <WaypointDotLavender />
 
             <FloatingCalendarCard>
               <FloatingCalendarHeader>
@@ -195,21 +198,23 @@ export function LoginScreen() {
               </FloatingCalendarGrid>
             </FloatingCalendarCard>
 
-            <FloatingProgressCard>
-              <ProgressCardHeader>
-                <ProgressPill>
-                  <ProgressPillText>TCC</ProgressPillText>
-                </ProgressPill>
+            <FloatingOrientationCard>
+              <OrientationCardHeader>
+                <OrientationPill>
+                  <OrientationPillText>TCC</OrientationPillText>
+                </OrientationPill>
                 <AcademicIconSmall name="school-outline" />
-              </ProgressCardHeader>
+              </OrientationCardHeader>
               <SkeletonLineShort />
               <SkeletonLineLong />
-            </FloatingProgressCard>
+            </FloatingOrientationCard>
 
-            <CenterCompassBadge>
-              <Feather name="compass" size={17} color="#FFFFFF" />
-            </CenterCompassBadge>
-          </HeroComposition>
+            <CenterCompassRing>
+              <CenterCompassBadge>
+                <Feather name="compass" size={17} color="#FFFFFF" />
+              </CenterCompassBadge>
+            </CenterCompassRing>
+          </HeroScene>
 
           <TextBlock>
             <Title isCompact={isCompact}>Seu TCC, no caminho certo.</Title>
@@ -258,7 +263,7 @@ export function LoginScreen() {
               <Feather
                 name="compass"
                 size={15}
-                color={theme.colors.primary_dark}
+                color={theme.colors.editorial_navy}
               />
               <DemoButtonText>Explorar modo demo</DemoButtonText>
             </DemoButton>

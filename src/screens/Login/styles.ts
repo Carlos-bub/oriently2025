@@ -24,93 +24,91 @@ export const MainColumn = styled.View`
   align-items: center;
 `;
 
-/* ── Brand Header ── */
-export const BrandRow = styled.View`
-  flex-direction: row;
+export const BrandHeader = styled.View`
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 `;
 
-export const BrandIconBox = styled.View`
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.boxprofile};
-  border-width: 1px;
-  border-color: #dce8fd;
-  align-items: center;
-  justify-content: center;
-`;
-
-export const BrandName = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
-  font-family: ${theme.fonts.Titulos};
-  font-size: ${RFValue(18)}px;
-  letter-spacing: -0.3px;
-`;
-
-/* ── Cohesive Academic Flow Hero Composition ── */
-export const HeroComposition = styled.View`
-  width: 240px;
-  height: 146px;
+/* ── Editorial Journey Scene ── */
+export const HeroScene = styled.View<{ isShortScreen?: boolean }>`
+  width: 264px;
+  height: ${(props: { isShortScreen?: boolean }) =>
+    props.isShortScreen ? "144px" : "164px"};
   align-items: center;
   justify-content: center;
   position: relative;
-  margin-bottom: 20px;
+  margin-bottom: ${(props: { isShortScreen?: boolean }) =>
+    props.isShortScreen ? "16px" : "22px"};
 `;
 
-export const HeroBackdropHalo = styled.View`
+export const ConcentricArcOuter = styled.View`
   position: absolute;
-  width: 136px;
-  height: 136px;
-  border-radius: 68px;
+  width: 158px;
+  height: 158px;
+  border-radius: 79px;
+  border-width: 1px;
+  border-color: rgba(37, 139, 255, 0.14);
+`;
+
+export const ConcentricArcInner = styled.View`
+  position: absolute;
+  width: 112px;
+  height: 112px;
+  border-radius: 56px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.boxprofile};
-  opacity: 0.75;
+  border-width: 1px;
+  border-color: rgba(124, 114, 232, 0.22);
+  opacity: 0.78;
 `;
 
-export const OrbitDotBlue = styled.View`
+export const TrajectoryTrackLine = styled.View`
   position: absolute;
-  top: 14px;
-  left: 26px;
+  width: 146px;
+  height: 1.5px;
+  background-color: rgba(124, 114, 232, 0.35);
+  transform: rotate(-16deg);
+`;
+
+export const WaypointDotBlue = styled.View`
+  position: absolute;
+  top: 20px;
+  left: 34px;
   width: 9px;
   height: 9px;
   border-radius: 4.5px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.primary};
-  opacity: 0.45;
+  opacity: 0.55;
 `;
 
-export const OrbitDotLavender = styled.View`
+export const WaypointDotLavender = styled.View`
   position: absolute;
-  bottom: 18px;
-  right: 22px;
+  bottom: 22px;
+  right: 30px;
   width: 11px;
   height: 11px;
   border-radius: 5.5px;
   background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.lavender};
-  opacity: 0.55;
+    props.theme.colors.editorial_lavender};
+  opacity: 0.65;
 `;
 
 export const FloatingCalendarCard = styled.View`
   position: absolute;
-  left: 26px;
+  left: 16px;
   bottom: 14px;
-  width: 92px;
+  width: 94px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.background};
   border-radius: 16px;
   border-width: 1px;
   border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
   overflow: hidden;
-  transform: rotate(-7deg);
+  transform: rotate(-6deg);
   elevation: 3;
-  shadow-color: #1544b5;
+  shadow-color: #1e355e;
   shadow-offset: 0px 4px;
   shadow-opacity: 0.12;
   shadow-radius: 8px;
@@ -152,49 +150,49 @@ export const GridCell = styled.View<{ active?: boolean }>`
     props.active ? props.theme.colors.primary : props.theme.colors.surface};
 `;
 
-export const FloatingProgressCard = styled.View`
+export const FloatingOrientationCard = styled.View`
   position: absolute;
-  right: 24px;
-  top: 16px;
-  width: 118px;
+  right: 14px;
+  top: 14px;
+  width: 122px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.background};
   border-radius: 16px;
   border-width: 1px;
   border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
   padding: 11px 12px;
-  transform: rotate(5deg);
+  transform: rotate(4deg);
   elevation: 4;
-  shadow-color: #172b4d;
+  shadow-color: #1e355e;
   shadow-offset: 0px 4px;
   shadow-opacity: 0.1;
   shadow-radius: 8px;
   gap: 7px;
 `;
 
-export const ProgressCardHeader = styled.View`
+export const OrientationCardHeader = styled.View`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
 `;
 
-export const ProgressPill = styled.View`
+export const OrientationPill = styled.View`
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.boxprofile};
   padding: 2px 7px;
   border-radius: 8px;
 `;
 
-export const ProgressPillText = styled.Text`
+export const OrientationPillText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
+    props.theme.colors.editorial_navy};
   font-family: ${theme.fonts.buttons};
   font-size: ${RFValue(9)}px;
 `;
 
 export const AcademicIconSmall = styled(MaterialCommunityIcons)`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
+    props.theme.colors.editorial_navy};
   font-size: 16px;
 `;
 
@@ -203,16 +201,25 @@ export const SkeletonLineShort = styled.View`
   height: 5px;
   border-radius: 2.5px;
   background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.lavender};
-  opacity: 0.65;
+    props.theme.colors.editorial_lavender};
+  opacity: 0.7;
 `;
 
 export const SkeletonLineLong = styled.View`
-  width: 86px;
+  width: 88px;
   height: 5px;
   border-radius: 2.5px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.border};
+`;
+
+export const CenterCompassRing = styled.View`
+  width: 46px;
+  height: 46px;
+  border-radius: 23px;
+  background-color: rgba(124, 114, 232, 0.18);
+  align-items: center;
+  justify-content: center;
 `;
 
 export const CenterCompassBadge = styled.View`
@@ -220,34 +227,34 @@ export const CenterCompassBadge = styled.View`
   height: 38px;
   border-radius: 19px;
   background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.lavender};
-  border-width: 3px;
+    props.theme.colors.editorial_lavender};
+  border-width: 2.5px;
   border-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.background};
   align-items: center;
   justify-content: center;
   elevation: 5;
-  shadow-color: #172b4d;
+  shadow-color: #1e355e;
   shadow-offset: 0px 3px;
-  shadow-opacity: 0.15;
+  shadow-opacity: 0.18;
   shadow-radius: 6px;
 `;
 
 /* ── Copy ── */
 export const TextBlock = styled.View`
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
   padding-horizontal: 8px;
 `;
 
 export const Title = styled.Text<{ isCompact?: boolean }>`
   font-size: ${(props: { isCompact?: boolean }) =>
-    props.isCompact ? RFValue(20) : RFValue(23)}px;
+    props.isCompact ? RFValue(21) : RFValue(24)}px;
   line-height: ${(props: { isCompact?: boolean }) =>
-    props.isCompact ? RFValue(26) : RFValue(30)}px;
+    props.isCompact ? RFValue(27) : RFValue(31)}px;
   font-family: ${theme.fonts.Titulos};
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
+    props.theme.colors.editorial_navy};
   text-align: center;
   margin-bottom: 8px;
 `;
@@ -257,7 +264,7 @@ export const Subtitle = styled.Text`
   line-height: ${RFValue(19)}px;
   font-family: ${theme.fonts.Subtituloslight};
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
+    props.theme.colors.editorial_muted};
   text-align: center;
   max-width: 300px;
 `;
@@ -284,7 +291,7 @@ export const GoogleButton = styled.TouchableOpacity<{ disabled?: boolean }>`
   border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
   opacity: ${(props: { disabled?: boolean }) => (props.disabled ? 0.6 : 1)};
   elevation: 2;
-  shadow-color: #172b4d;
+  shadow-color: #1e355e;
   shadow-offset: 0px 3px;
   shadow-opacity: 0.08;
   shadow-radius: 8px;
@@ -294,7 +301,7 @@ export const GoogleButtonText = styled.Text`
   font-size: ${RFValue(14)}px;
   font-family: ${theme.fonts.Subtitulos};
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
+    props.theme.colors.editorial_navy};
   margin-left: 10px;
 `;
 
@@ -319,7 +326,7 @@ export const DemoButtonText = styled.Text`
   font-size: ${RFValue(13)}px;
   font-family: ${theme.fonts.Subtitulos};
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
+    props.theme.colors.editorial_navy};
 `;
 
 export const Icon = styled.Image`
@@ -332,7 +339,7 @@ export const FooterText = styled.Text`
   line-height: ${RFValue(16)}px;
   font-family: ${theme.fonts.Subtituloslight};
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
+    props.theme.colors.editorial_muted};
   text-align: center;
   max-width: 280px;
 `;

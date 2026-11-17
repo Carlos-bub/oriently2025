@@ -13,6 +13,12 @@ import {
   getPastAndMissedEvents,
 } from "../../services/calendlyService";
 import { CalendlyEvent } from "../../services/types";
+import {
+  AcademicBadge,
+  BrandMark,
+  EditorialDateBlock,
+  JourneyCheckpoint,
+} from "../../components/AcademicFlow";
 
 import {
   Container,
@@ -20,8 +26,6 @@ import {
   HeaderRow,
   HeaderBrandBlock,
   HeaderDateText,
-  BrandRow,
-  BrandName,
   HeaderActions,
   AvatarWrapper,
   UserPhoto,
@@ -33,18 +37,17 @@ import {
   ScrollContent,
   Body,
   WelcomeSection,
+  GreetingEyebrow,
   GreetingTitle,
-  GreetingHighlight,
   WelcomeDescription,
   HeroScheduleCard,
   HeroTextColumn,
-  HeroTag,
-  HeroTagText,
   HeroTitle,
   HeroDescription,
   HeroActionPill,
   HeroActionPillText,
   HeroIllustrationBox,
+  HeroTrajectoryArc,
   HeroOrbitDotTop,
   HeroOrbitDotBottom,
   MiniCalendarFrame,
@@ -66,15 +69,8 @@ import {
   SectionLinkButton,
   SectionLinkText,
   TimelineRow,
-  TimelineTrack,
-  TimelineOuterDot,
-  TimelineInnerDot,
-  TimelineLine,
   MeetingCard,
   MeetingTopRow,
-  DateHighlightBox,
-  DateHighlightDay,
-  DateHighlightMonth,
   MeetingInfoCol,
   StatusBadge,
   StatusDot,
@@ -98,7 +94,6 @@ import {
   CenteredStateText,
   RetryButton,
   RetryButtonText,
-  ActionIcon,
 } from "./styles";
 
 export function Home() {
@@ -116,7 +111,7 @@ export function Home() {
   const [partialWarning, setPartialWarning] = useState<string | null>(null);
 
   const isCompactScreen = width < 360;
-  const showHeroIllustration = width >= 330;
+  const showHeroIllustration = width >= 320;
   const firstName = user?.name ? user.name.trim().split(" ")[0] : "Visitante";
 
   const todayEditorial = new Date().toLocaleDateString("pt-BR", {
@@ -242,12 +237,12 @@ export function Home() {
   const getMeetingLocationLabel = (event: CalendlyEvent): string | null => {
     if (!event.location) return null;
     if (event.location.location) return event.location.location;
-    if (event.location.join_url) return "Videoconferência";
     if (event.location.type === "google_conference") return "Google Meet";
     if (event.location.type === "zoom") return "Zoom";
     if (event.location.type === "microsoft_teams_conference") {
       return "Microsoft Teams";
     }
+    if (event.location.join_url) return "Videoconferência";
     return null;
   };
 
@@ -288,45 +283,48 @@ export function Home() {
 
     if (!nextMeeting) {
       return (
-        <StateCard>
-          <EmptyIllustrationRow>
-            <EmptyAcademicGraphic>
-              <EmptyAcademicIcon name="book-open-page-variant-outline" />
-              <EmptyCompassCorner>
-                <Feather name="compass" size={10} color="#FFFFFF" />
-              </EmptyCompassCorner>
-            </EmptyAcademicGraphic>
+        <TimelineRow>
+          <JourneyCheckpoint waiting />
+          <StateCard>
+            <EmptyIllustrationRow>
+              <EmptyAcademicGraphic>
+                <EmptyAcademicIcon name="book-open-page-variant-outline" />
+                <EmptyCompassCorner>
+                  <Feather name="compass" size={10} color="#FFFFFF" />
+                </EmptyCompassCorner>
+              </EmptyAcademicGraphic>
 
-            <EmptyTextCol>
-              <EmptyTitle>
-                {partialWarning
-                  ? "Agenda carregada parcialmente"
-                  : "Nenhuma orientação marcada"}
-              </EmptyTitle>
-              <EmptySubtitle>
-                {partialWarning ||
-                  "Que tal reservar o próximo encontro do seu TCC?"}
-              </EmptySubtitle>
-            </EmptyTextCol>
-          </EmptyIllustrationRow>
+              <EmptyTextCol>
+                <EmptyTitle>
+                  {partialWarning
+                    ? "Agenda carregada parcialmente"
+                    : "Nenhuma orientação marcada"}
+                </EmptyTitle>
+                <EmptySubtitle>
+                  {partialWarning ||
+                    "Reserve seu próximo encontro para continuar sua trajetória."}
+                </EmptySubtitle>
+              </EmptyTextCol>
+            </EmptyIllustrationRow>
 
-          <EmptyDivider />
+            <EmptyDivider />
 
-          <EmptyFooterAction
-            activeOpacity={0.75}
-            onPress={() => navigation.navigate("Schedule")}
-            accessibilityRole="button"
-            accessibilityLabel="Agendar orientação agora"
-            accessibilityHint="Abre a tela para agendar uma reunião"
-          >
-            <EmptyFooterText>Agendar agora</EmptyFooterText>
-            <ActionIcon
-              name="arrow-right"
-              size={15}
-              color={theme.colors.primary_dark}
-            />
-          </EmptyFooterAction>
-        </StateCard>
+            <EmptyFooterAction
+              activeOpacity={0.75}
+              onPress={() => navigation.navigate("Schedule")}
+              accessibilityRole="button"
+              accessibilityLabel="Agendar orientação agora"
+              accessibilityHint="Abre a tela para agendar uma reunião"
+            >
+              <EmptyFooterText>Agendar agora</EmptyFooterText>
+              <Feather
+                name="arrow-right"
+                size={15}
+                color={theme.colors.editorial_navy}
+              />
+            </EmptyFooterAction>
+          </StateCard>
+        </TimelineRow>
       );
     }
 
@@ -335,12 +333,7 @@ export function Home() {
 
     return (
       <TimelineRow>
-        <TimelineTrack>
-          <TimelineOuterDot>
-            <TimelineInnerDot />
-          </TimelineOuterDot>
-          <TimelineLine />
-        </TimelineTrack>
+        <JourneyCheckpoint />
 
         <MeetingCard
           activeOpacity={0.85}
@@ -350,10 +343,7 @@ export function Home() {
           accessibilityHint="Toque para abrir os detalhes na sua agenda"
         >
           <MeetingTopRow>
-            <DateHighlightBox>
-              <DateHighlightDay>{day}</DateHighlightDay>
-              <DateHighlightMonth>{month}</DateHighlightMonth>
-            </DateHighlightBox>
+            <EditorialDateBlock day={day} month={month} />
 
             <MeetingInfoCol>
               <StatusBadge>
@@ -368,7 +358,7 @@ export function Home() {
                   <Feather
                     name="clock"
                     size={12}
-                    color={theme.colors.text_secondary}
+                    color={theme.colors.editorial_muted}
                   />
                   <MeetingMetaText>
                     {formatTimeAndDuration(
@@ -383,7 +373,7 @@ export function Home() {
                     <Feather
                       name="map-pin"
                       size={12}
-                      color={theme.colors.lavender}
+                      color={theme.colors.editorial_lavender}
                     />
                     <MeetingMetaText numberOfLines={1}>
                       {locationLabel}
@@ -396,7 +386,7 @@ export function Home() {
                     <Feather
                       name="info"
                       size={12}
-                      color={theme.colors.text_secondary}
+                      color={theme.colors.editorial_muted}
                     />
                     <MeetingMetaText numberOfLines={2}>
                       {partialWarning}
@@ -417,10 +407,7 @@ export function Home() {
         <HeaderRow>
           <HeaderBrandBlock>
             <HeaderDateText>{todayEditorial}</HeaderDateText>
-            <BrandRow>
-              <Feather name="compass" size={16} color={theme.colors.primary} />
-              <BrandName>Oriently</BrandName>
-            </BrandRow>
+            <BrandMark showJourneySignature />
           </HeaderBrandBlock>
 
           <HeaderActions>
@@ -450,7 +437,7 @@ export function Home() {
               {isLoggingOut ? (
                 <ActivityIndicator
                   size="small"
-                  color={theme.colors.primary_dark}
+                  color={theme.colors.editorial_navy}
                 />
               ) : (
                 <LogoutIcon name="logout" />
@@ -467,12 +454,12 @@ export function Home() {
       >
         <Body>
           <WelcomeSection>
+            <GreetingEyebrow>Olá, {firstName}</GreetingEyebrow>
             <GreetingTitle isCompact={isCompactScreen}>
-              Olá, {firstName}!
+              Seu TCC, no caminho certo.
             </GreetingTitle>
-            <GreetingHighlight>Seu TCC, no caminho certo.</GreetingHighlight>
             <WelcomeDescription>
-              Acompanhe suas orientações e organize seus próximos encontros.
+              Cada orientação é um passo à frente.
             </WelcomeDescription>
           </WelcomeSection>
 
@@ -484,10 +471,7 @@ export function Home() {
             accessibilityHint="Abre o calendário para escolher data e horário"
           >
             <HeroTextColumn>
-              <HeroTag>
-                <Feather name="compass" size={11} color="#FFFFFF" />
-                <HeroTagText>Orientação</HeroTagText>
-              </HeroTag>
+              <AcademicBadge label="Próximo passo" onDark />
 
               <HeroTitle>Agendar reunião</HeroTitle>
               <HeroDescription>
@@ -499,13 +483,14 @@ export function Home() {
                 <Feather
                   name="arrow-right"
                   size={13}
-                  color={theme.colors.primary_dark}
+                  color={theme.colors.editorial_navy}
                 />
               </HeroActionPill>
             </HeroTextColumn>
 
             {showHeroIllustration && (
               <HeroIllustrationBox isCompact={isCompactScreen}>
+                <HeroTrajectoryArc />
                 <HeroOrbitDotTop />
                 <HeroOrbitDotBottom />
                 <MiniCalendarFrame>
@@ -520,7 +505,7 @@ export function Home() {
                   </MiniCalendarBody>
                 </MiniCalendarFrame>
                 <MiniCompassBadge>
-                  <Feather name="compass" size={16} color="#FFFFFF" />
+                  <Feather name="compass" size={15} color="#FFFFFF" />
                 </MiniCompassBadge>
               </HeroIllustrationBox>
             )}
@@ -535,9 +520,9 @@ export function Home() {
           >
             <SecondaryIconBox>
               <Feather
-                name="calendar"
-                size={18}
-                color={theme.colors.primary_dark}
+                name="book-open"
+                size={17}
+                color={theme.colors.editorial_navy}
               />
             </SecondaryIconBox>
             <SecondaryTextCol>
@@ -549,7 +534,7 @@ export function Home() {
             <Feather
               name="chevron-right"
               size={18}
-              color={theme.colors.text_secondary}
+              color={theme.colors.editorial_muted}
             />
           </SecondaryAgendaCard>
 
@@ -569,7 +554,7 @@ export function Home() {
                 <Feather
                   name="chevron-right"
                   size={14}
-                  color={theme.colors.primary_dark}
+                  color={theme.colors.editorial_navy}
                 />
               </SectionLinkButton>
             )}

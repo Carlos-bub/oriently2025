@@ -1,11 +1,7 @@
 import styled from "styled-components/native";
 import { DefaultTheme } from "styled-components/native";
 import { RFValue } from "react-native-responsive-fontsize";
-import {
-  MaterialIcons,
-  MaterialCommunityIcons,
-  Feather,
-} from "@expo/vector-icons";
+import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import theme from "../../global/styles/theme";
 
 export const Container = styled.View`
@@ -19,7 +15,7 @@ export const Header = styled.View<{ topInset: number }>`
   width: 100%;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.surface};
-  padding-top: ${(props: { topInset: number }) => props.topInset + 10}px;
+  padding-top: ${(props: { topInset: number }) => props.topInset + 12}px;
   padding-bottom: 14px;
   padding-horizontal: 20px;
   border-bottom-width: 1px;
@@ -36,29 +32,15 @@ export const HeaderRow = styled.View`
 export const HeaderBrandBlock = styled.View`
   flex: 1;
   margin-right: 12px;
+  gap: 3px;
 `;
 
 export const HeaderDateText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
+    props.theme.colors.editorial_muted};
   font-family: ${theme.fonts.Subtituloslight};
-  font-size: ${RFValue(11.5)}px;
+  font-size: ${RFValue(11)}px;
   text-transform: capitalize;
-  margin-bottom: 2px;
-`;
-
-export const BrandRow = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-`;
-
-export const BrandName = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
-  font-family: ${theme.fonts.Titulos};
-  font-size: ${RFValue(17)}px;
-  letter-spacing: -0.3px;
 `;
 
 export const HeaderActions = styled.View`
@@ -86,7 +68,7 @@ export const UserAvatarFallback = styled.View`
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.boxprofile};
   border-width: 1.5px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
+  border-color: #dce8fd;
   align-items: center;
   justify-content: center;
 `;
@@ -94,7 +76,7 @@ export const UserAvatarFallback = styled.View`
 export const UserIcon = styled(MaterialIcons)`
   font-size: 20px;
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
+    props.theme.colors.editorial_navy};
 `;
 
 export const AvatarStatusDot = styled.View`
@@ -126,7 +108,7 @@ export const LogoutButton = styled.TouchableOpacity<{ disabled?: boolean }>`
 
 export const LogoutIcon = styled(MaterialIcons)`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
+    props.theme.colors.editorial_navy};
   font-size: 18px;
 `;
 
@@ -141,36 +123,36 @@ export const Body = styled.View`
   padding: 20px 20px 28px 20px;
 `;
 
-/* ── Welcome ── */
+/* ── Editorial Greeting ── */
 export const WelcomeSection = styled.View`
   margin-bottom: 20px;
 `;
 
+export const GreetingEyebrow = styled.Text`
+  color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.editorial_muted};
+  font-family: ${theme.fonts.buttons};
+  font-size: ${RFValue(13)}px;
+  margin-bottom: 2px;
+`;
+
 export const GreetingTitle = styled.Text<{ isCompact?: boolean }>`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
+    props.theme.colors.editorial_navy};
   font-family: ${theme.fonts.Titulos};
   font-size: ${(props: { isCompact?: boolean }) =>
     props.isCompact ? RFValue(21) : RFValue(23)}px;
   line-height: ${(props: { isCompact?: boolean }) =>
     props.isCompact ? RFValue(27) : RFValue(30)}px;
-`;
-
-export const GreetingHighlight = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
-  font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(15)}px;
-  margin-top: 2px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 `;
 
 export const WelcomeDescription = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
+    props.theme.colors.editorial_muted};
   font-family: ${theme.fonts.Subtituloslight};
   font-size: ${RFValue(13)}px;
-  line-height: ${RFValue(19)}px;
+  line-height: ${RFValue(18.5)}px;
 `;
 
 /* ── Featured Hero Card: Agendar reunião ── */
@@ -194,30 +176,14 @@ export const HeroScheduleCard = styled.TouchableOpacity`
 export const HeroTextColumn = styled.View`
   flex: 1;
   padding-right: 12px;
-`;
-
-export const HeroTag = styled.View`
-  align-self: flex-start;
-  flex-direction: row;
-  align-items: center;
-  gap: 5px;
-  background-color: rgba(255, 255, 255, 0.18);
-  padding: 4px 10px;
-  border-radius: 10px;
-  margin-bottom: 10px;
-`;
-
-export const HeroTagText = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.background};
-  font-family: ${theme.fonts.buttons};
-  font-size: ${RFValue(10.5)}px;
+  gap: 6px;
 `;
 
 export const HeroTitle = styled.Text`
   color: ${(props: { theme: DefaultTheme }) => props.theme.colors.background};
   font-family: ${theme.fonts.Titulos};
-  font-size: ${RFValue(18)}px;
-  margin-bottom: 4px;
+  font-size: ${RFValue(17.5)}px;
+  margin-top: 2px;
 `;
 
 export const HeroDescription = styled.Text`
@@ -225,7 +191,7 @@ export const HeroDescription = styled.Text`
   font-family: ${theme.fonts.Subtituloslight};
   font-size: ${RFValue(12)}px;
   line-height: ${RFValue(17)}px;
-  margin-bottom: 14px;
+  margin-bottom: 6px;
 `;
 
 export const HeroActionPill = styled.View`
@@ -241,12 +207,12 @@ export const HeroActionPill = styled.View`
 
 export const HeroActionPillText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
+    props.theme.colors.editorial_navy};
   font-family: ${theme.fonts.Subtitulos};
   font-size: ${RFValue(12)}px;
 `;
 
-/* ── Custom Vector Illustration inside Hero Card ── */
+/* ── Vector Illustration inside Hero Card ── */
 export const HeroIllustrationBox = styled.View<{ isCompact?: boolean }>`
   width: ${(props: { isCompact?: boolean }) =>
     props.isCompact ? "82px" : "94px"};
@@ -257,15 +223,24 @@ export const HeroIllustrationBox = styled.View<{ isCompact?: boolean }>`
   position: relative;
 `;
 
+export const HeroTrajectoryArc = styled.View`
+  position: absolute;
+  width: 84px;
+  height: 84px;
+  border-radius: 42px;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.22);
+`;
+
 export const HeroOrbitDotTop = styled.View`
   position: absolute;
   top: 4px;
   right: 8px;
-  width: 10px;
-  height: 10px;
-  border-radius: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 4.5px;
   background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.lavender};
+    props.theme.colors.editorial_lavender};
   border-width: 2px;
   border-color: rgba(255, 255, 255, 0.85);
 `;
@@ -274,30 +249,30 @@ export const HeroOrbitDotBottom = styled.View`
   position: absolute;
   bottom: 8px;
   left: 4px;
-  width: 7px;
-  height: 7px;
-  border-radius: 3.5px;
-  background-color: rgba(255, 255, 255, 0.55);
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background-color: rgba(255, 255, 255, 0.6);
 `;
 
 export const MiniCalendarFrame = styled.View`
-  width: 76px;
+  width: 72px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.background};
   border-radius: 14px;
   overflow: hidden;
   transform: rotate(-4deg);
   elevation: 3;
-  shadow-color: #1544b5;
+  shadow-color: #1e355e;
   shadow-offset: 0px 4px;
-  shadow-opacity: 0.25;
+  shadow-opacity: 0.22;
   shadow-radius: 6px;
 `;
 
 export const MiniCalendarTopBar = styled.View`
   background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
-  height: 20px;
+    props.theme.colors.editorial_navy};
+  height: 19px;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
@@ -305,9 +280,9 @@ export const MiniCalendarTopBar = styled.View`
 `;
 
 export const MiniCalendarRing = styled.View`
-  width: 6px;
-  height: 6px;
-  border-radius: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 2.5px;
   background-color: rgba(255, 255, 255, 0.85);
 `;
 
@@ -318,16 +293,16 @@ export const MiniCalendarBody = styled.View`
 `;
 
 export const MiniCalendarLineShort = styled.View`
-  width: 34px;
+  width: 32px;
   height: 4px;
   border-radius: 2px;
   background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.lavender};
-  opacity: 0.65;
+    props.theme.colors.editorial_lavender};
+  opacity: 0.7;
 `;
 
 export const MiniCalendarLineLong = styled.View`
-  width: 52px;
+  width: 48px;
   height: 4px;
   border-radius: 2px;
   background-color: ${(props: { theme: DefaultTheme }) =>
@@ -338,11 +313,11 @@ export const MiniCompassBadge = styled.View`
   position: absolute;
   bottom: 4px;
   right: 2px;
-  width: 34px;
-  height: 34px;
-  border-radius: 17px;
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
   background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.lavender};
+    props.theme.colors.editorial_lavender};
   border-width: 2.5px;
   border-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.background};
@@ -355,24 +330,24 @@ export const MiniCompassBadge = styled.View`
 export const SecondaryAgendaCard = styled.TouchableOpacity`
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.background};
-  border-radius: 18px;
-  padding: 14px 16px;
+  border-radius: 16px;
+  padding: 13px 16px;
   flex-direction: row;
   align-items: center;
   border-width: 1px;
   border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
   margin-bottom: 22px;
   elevation: 1;
-  shadow-color: #172b4d;
+  shadow-color: #1e355e;
   shadow-offset: 0px 2px;
   shadow-opacity: 0.04;
   shadow-radius: 6px;
 `;
 
 export const SecondaryIconBox = styled.View`
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.surface};
   border-width: 1px;
@@ -389,14 +364,14 @@ export const SecondaryTextCol = styled.View`
 
 export const SecondaryTitle = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
+    props.theme.colors.editorial_navy};
   font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(14.5)}px;
+  font-size: ${RFValue(14)}px;
 `;
 
 export const SecondaryDescription = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
+    props.theme.colors.editorial_muted};
   font-family: ${theme.fonts.Subtituloslight};
   font-size: ${RFValue(11.5)}px;
   margin-top: 1px;
@@ -426,7 +401,7 @@ export const SectionDot = styled.View`
 
 export const SectionTitle = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
+    props.theme.colors.editorial_navy};
   font-family: ${theme.fonts.Subtitulos};
   font-size: ${RFValue(14)}px;
 `;
@@ -434,56 +409,20 @@ export const SectionTitle = styled.Text`
 export const SectionLinkButton = styled.TouchableOpacity`
   flex-direction: row;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 `;
 
 export const SectionLinkText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
+    props.theme.colors.editorial_navy};
   font-family: ${theme.fonts.buttons};
   font-size: ${RFValue(12)}px;
 `;
 
-/* ── Editorial Timeline + Next Meeting Card ── */
+/* ── Editorial Checkpoint + Next Meeting Card ── */
 export const TimelineRow = styled.View`
   flex-direction: row;
   align-items: stretch;
-`;
-
-export const TimelineTrack = styled.View`
-  width: 22px;
-  align-items: center;
-  margin-right: 10px;
-  padding-top: 16px;
-`;
-
-export const TimelineOuterDot = styled.View`
-  width: 14px;
-  height: 14px;
-  border-radius: 7px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.boxprofile};
-  border-width: 2px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.primary};
-  align-items: center;
-  justify-content: center;
-`;
-
-export const TimelineInnerDot = styled.View`
-  width: 5px;
-  height: 5px;
-  border-radius: 2.5px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary};
-`;
-
-export const TimelineLine = styled.View`
-  flex: 1;
-  width: 1.5px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.border};
-  margin-top: 6px;
-  margin-bottom: 6px;
 `;
 
 export const MeetingCard = styled.TouchableOpacity`
@@ -495,7 +434,7 @@ export const MeetingCard = styled.TouchableOpacity`
   border-width: 1px;
   border-color: #dce8fd;
   elevation: 1;
-  shadow-color: #172b4d;
+  shadow-color: #1e355e;
   shadow-offset: 0px 2px;
   shadow-opacity: 0.05;
   shadow-radius: 6px;
@@ -504,35 +443,6 @@ export const MeetingCard = styled.TouchableOpacity`
 export const MeetingTopRow = styled.View`
   flex-direction: row;
   align-items: flex-start;
-`;
-
-export const DateHighlightBox = styled.View`
-  width: 48px;
-  padding-vertical: 7px;
-  border-radius: 13px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.surface};
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  align-items: center;
-  justify-content: center;
-  margin-right: 12px;
-`;
-
-export const DateHighlightDay = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
-  font-family: ${theme.fonts.Titulos};
-  font-size: ${RFValue(16)}px;
-  line-height: ${RFValue(20)}px;
-`;
-
-export const DateHighlightMonth = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.lavender};
-  font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(10)}px;
-  text-transform: uppercase;
 `;
 
 export const MeetingInfoCol = styled.View`
@@ -561,14 +471,14 @@ export const StatusDot = styled.View`
 
 export const StatusBadgeText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
+    props.theme.colors.editorial_navy};
   font-family: ${theme.fonts.buttons};
   font-size: ${RFValue(10)}px;
 `;
 
 export const MeetingTitle = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
+    props.theme.colors.editorial_navy};
   font-family: ${theme.fonts.Subtitulos};
   font-size: ${RFValue(14.5)}px;
   margin-bottom: 6px;
@@ -586,7 +496,7 @@ export const MeetingMetaItem = styled.View`
 
 export const MeetingMetaText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
+    props.theme.colors.editorial_muted};
   font-family: ${theme.fonts.Subtituloslight};
   font-size: ${RFValue(12)}px;
   flex: 1;
@@ -594,14 +504,15 @@ export const MeetingMetaText = styled.Text`
 
 /* ── Empty, Loading & Error States ── */
 export const StateCard = styled.View`
+  flex: 1;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.background};
-  border-radius: 20px;
-  padding: 18px 16px;
+  border-radius: 18px;
+  padding: 16px;
   border-width: 1px;
   border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
   elevation: 1;
-  shadow-color: #172b4d;
+  shadow-color: #1e355e;
   shadow-offset: 0px 2px;
   shadow-opacity: 0.04;
   shadow-radius: 6px;
@@ -611,13 +522,13 @@ export const EmptyIllustrationRow = styled.View`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
 `;
 
 export const EmptyAcademicGraphic = styled.View`
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.surface};
   border-width: 1px;
@@ -629,19 +540,19 @@ export const EmptyAcademicGraphic = styled.View`
 
 export const EmptyAcademicIcon = styled(MaterialCommunityIcons)`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
-  font-size: 24px;
+    props.theme.colors.editorial_navy};
+  font-size: 22px;
 `;
 
 export const EmptyCompassCorner = styled.View`
   position: absolute;
   bottom: -4px;
   right: -4px;
-  width: 20px;
-  height: 20px;
-  border-radius: 10px;
+  width: 19px;
+  height: 19px;
+  border-radius: 9.5px;
   background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.lavender};
+    props.theme.colors.editorial_lavender};
   border-width: 2px;
   border-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.background};
@@ -655,14 +566,14 @@ export const EmptyTextCol = styled.View`
 
 export const EmptyTitle = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
+    props.theme.colors.editorial_navy};
   font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(14)}px;
+  font-size: ${RFValue(13.5)}px;
 `;
 
 export const EmptySubtitle = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
+    props.theme.colors.editorial_muted};
   font-family: ${theme.fonts.Subtituloslight};
   font-size: ${RFValue(12)}px;
   line-height: ${RFValue(17)}px;
@@ -673,7 +584,7 @@ export const EmptyDivider = styled.View`
   height: 1px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.border};
-  margin-vertical: 12px;
+  margin-vertical: 11px;
 `;
 
 export const EmptyFooterAction = styled.TouchableOpacity`
@@ -684,7 +595,7 @@ export const EmptyFooterAction = styled.TouchableOpacity`
 
 export const EmptyFooterText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
+    props.theme.colors.editorial_navy};
   font-family: ${theme.fonts.Subtitulos};
   font-size: ${RFValue(12.5)}px;
 `;
@@ -697,7 +608,7 @@ export const CenteredStateBox = styled.View`
 
 export const CenteredStateText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
+    props.theme.colors.editorial_muted};
   font-family: ${theme.fonts.Subtituloslight};
   font-size: ${RFValue(12.5)}px;
   text-align: center;
@@ -715,9 +626,7 @@ export const RetryButton = styled.TouchableOpacity`
 
 export const RetryButtonText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
+    props.theme.colors.editorial_navy};
   font-family: ${theme.fonts.buttons};
   font-size: ${RFValue(12.5)}px;
 `;
-
-export const ActionIcon = styled(Feather)``;
