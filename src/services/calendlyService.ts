@@ -20,6 +20,15 @@ import {
   executeNativeBooking,
   fetchEventsWithMeta,
 } from "./bookingService";
+import {
+  cancelDemoEvent,
+  createDemoBooking,
+  getDemoAvailableTimes,
+  getDemoEvents,
+  getDemoEventTypes,
+  getDemoUserInfo,
+  isDemoModeActive,
+} from "./demoData";
 
 const env = process.env as Record<string, string | undefined>;
 const BACKEND_URL = resolveBackendUrl(
@@ -47,12 +56,18 @@ export const seedInviteesCacheForTest = (uri: string, invitees: Invitee[]) => {
 
 // Busca informações do orientador via BFF (propaga erros reais de rede/auth/servidor)
 export const getUserInfo = async (): Promise<User | null> => {
+  if (isDemoModeActive()) {
+    return getDemoUserInfo();
+  }
   const response = await api.get<{ resource: User | null }>("/api/calendly/me");
   return response.data.resource;
 };
 
 // Busca tipos de eventos permitidos via BFF (propaga erros reais)
 export const getEventTypes = async (_userUri?: string): Promise<EventType[]> => {
+  if (isDemoModeActive()) {
+    return getDemoEventTypes();
+  }
   const response = await api.get<{ collection: EventType[] }>(
     "/api/calendly/event-types"
   );
@@ -64,6 +79,9 @@ export const getAvailableTimes = async (
   eventTypeUri: string,
   selectedDate: string
 ): Promise<string[]> => {
+  if (isDemoModeActive()) {
+    return getDemoAvailableTimes(eventTypeUri, selectedDate);
+  }
   const startLocal = new Date(`${selectedDate}T00:00:00`);
   const endLocal = new Date(`${selectedDate}T23:59:59.999`);
 
@@ -100,6 +118,11 @@ export const getPastAndMissedEvents = async (
   _userUri?: string,
   _currentUserEmail?: string
 ): Promise<PastAndMissedEventsResult> => {
+  if (isDemoModeActive()) {
+    return getDemoEvents((uri, invitees) => {
+      inviteesCache[uri] = invitees;
+    });
+  }
   return fetchEventsWithMeta(api, (uri, invitees) => {
     inviteesCache[uri] = invitees;
   });
@@ -110,6 +133,9 @@ export const createNativeBooking = async (
   params: CreateNativeBookingParams,
   client: AxiosInstance = api
 ): Promise<BookingResult> => {
+  if (isDemoModeActive()) {
+    return createDemoBooking(params);
+  }
   return executeNativeBooking(params, client, clearInviteesCache);
 };
 
@@ -117,5 +143,8 @@ export const createNativeBooking = async (
 export const cancelEvent = async (
   eventUri: string
 ): Promise<CancelEventResult> => {
+  if (isDemoModeActive()) {
+    return cancelDemoEvent(eventUri);
+  }
   return executeCancelEvent(eventUri, api, clearInviteesCache);
 };

@@ -10,6 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { configureApiAuth } from "../services/apiClient";
 import { clearInviteesCache } from "../services/calendlyService";
+import { resetDemoStore, setDemoModeActive } from "../services/demoData";
 import { useDialog } from "./DialogContext";
 
 export interface UserData {
@@ -72,6 +73,7 @@ export function AuthContextProvider({
 
       await AsyncStorage.removeItem(USER_STORAGE_KEY);
       clearInviteesCache();
+      setDemoModeActive(false);
       updateIdToken(null);
       isDemoRef.current = false;
       setIsDemo(false);
@@ -145,6 +147,8 @@ export function AuthContextProvider({
 
         if (storedIsDemo) {
           isDemoRef.current = true;
+          resetDemoStore(storedUser.email);
+          setDemoModeActive(true);
           setIsDemo(true);
           updateIdToken(null);
           setUser(storedUser);
@@ -153,6 +157,7 @@ export function AuthContextProvider({
 
         // Nunca considerar dados locais como prova de autenticação: exige ID Token válido do Google
         isDemoRef.current = false;
+        setDemoModeActive(false);
         const freshToken = await refreshIdToken();
         if (freshToken) {
           setIsDemo(false);
@@ -197,6 +202,12 @@ export function AuthContextProvider({
         );
 
         isDemoRef.current = demoMode;
+        if (demoMode) {
+          resetDemoStore(userData.email);
+          setDemoModeActive(true);
+        } else {
+          setDemoModeActive(false);
+        }
         setIsDemo(demoMode);
         updateIdToken(demoMode ? null : googleIdToken || null);
         setUser(userData);
