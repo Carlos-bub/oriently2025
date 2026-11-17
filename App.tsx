@@ -83,7 +83,7 @@ export default function App() {
           <AuthContextProvider>
             <NavigationContainer onReady={onLayoutRootView}>
               <Routes />
-              <StatusBar style="light" backgroundColor="transparent" translucent />
+              <StatusBar style="dark" backgroundColor="transparent" translucent />
             </NavigationContainer>
           </AuthContextProvider>
         </DialogProvider>
