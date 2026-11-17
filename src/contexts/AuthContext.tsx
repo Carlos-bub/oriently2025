@@ -8,9 +8,9 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { Alert } from "react-native";
 import { configureApiAuth } from "../services/apiClient";
 import { clearInviteesCache } from "../services/calendlyService";
+import { useDialog } from "./DialogContext";
 
 export interface UserData {
   name: string;
@@ -46,6 +46,7 @@ export function AuthContextProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const { showDialog } = useDialog();
   const [user, setUser] = useState<UserData | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
@@ -77,7 +78,11 @@ export function AuthContextProvider({
       setUser(null);
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
-      Alert.alert("Erro", "Não foi possível fazer logout corretamente");
+      showDialog({
+        variant: "danger",
+        title: "Erro ao sair",
+        message: "Não foi possível fazer logout corretamente.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -197,10 +202,14 @@ export function AuthContextProvider({
         setUser(userData);
       } catch (error) {
         console.error("Erro ao salvar dados do usuário:", error);
-        Alert.alert("Erro", "Não foi possível concluir a autenticação.");
+        showDialog({
+          variant: "danger",
+          title: "Erro de autenticação",
+          message: "Não foi possível concluir a autenticação.",
+        });
       }
     },
-    [updateIdToken]
+    [showDialog, updateIdToken]
   );
 
   return (

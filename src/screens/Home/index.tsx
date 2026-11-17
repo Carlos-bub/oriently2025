@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from "react";
-import { ActivityIndicator, Alert, useWindowDimensions } from "react-native";
+import { ActivityIndicator, useWindowDimensions } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "styled-components/native";
 
 import { useAuth } from "../../contexts/AuthContext";
+import { useDialog } from "../../contexts/DialogContext";
 import { getFriendlyApiErrorMessage } from "../../services/apiClient";
 import {
   getUserInfo,
@@ -104,6 +105,7 @@ export function Home() {
   const { width } = useWindowDimensions();
   const theme = useTheme();
   const { user, signOut } = useAuth();
+  const { showDialog } = useDialog();
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [nextMeeting, setNextMeeting] = useState<CalendlyEvent | null>(null);
@@ -188,10 +190,12 @@ export function Home() {
       await signOut();
     } catch (error) {
       console.error("Erro no processo de logout:", error);
-      Alert.alert(
-        "Aviso",
-        "Ocorreu um erro ao fazer logout, por favor tente novamente."
-      );
+      showDialog({
+        variant: "warning",
+        title: "Aviso",
+        message:
+          "Ocorreu um erro ao fazer logout, por favor tente novamente.",
+      });
     } finally {
       setIsLoggingOut(false);
     }

@@ -9,7 +9,6 @@ import {
   SectionList,
   RefreshControl,
   ActivityIndicator,
-  Alert as RNAlert,
   Linking,
   AppState,
 } from "react-native";
@@ -28,6 +27,7 @@ import {
 } from "../../services/calendlyService";
 import { CalendlyEvent } from "../../services/types";
 import { useAuth } from "../../contexts/AuthContext";
+import { useDialog } from "../../contexts/DialogContext";
 import {
   Container,
   Header,
@@ -72,6 +72,7 @@ export function Profile() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { showDialog } = useDialog();
 
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -186,31 +187,50 @@ export function Profile() {
       );
 
       if (!isUserEvent) {
-        RNAlert.alert(
-          "Erro",
-          "Você não tem permissão para cancelar este evento."
-        );
+        showDialog({
+          variant: "danger",
+          title: "Sem permissão",
+          message: "Você não tem permissão para cancelar este evento.",
+        });
         return;
       }
 
-      RNAlert.alert(
-        "Cancelar reunião",
-        `Tem certeza que deseja cancelar "${event.name}"?`,
-        [
+      const eventDateFormatted = new Date(event.start_time).toLocaleDateString(
+        "pt-BR"
+      );
+      const eventTimeFormatted = formatTimeAndDuration(
+        event.start_time,
+        event.end_time
+      );
+
+      showDialog({
+        variant: "danger",
+        title: "Cancelar reunião",
+        message: "Tem certeza que deseja cancelar esta orientação?",
+        details: {
+          title: event.name,
+          date: eventDateFormatted,
+          time: eventTimeFormatted,
+        },
+        actions: [
           {
-            text: "Manter",
-            style: "cancel",
+            label: "Manter",
+            tone: "secondary",
           },
           {
-            text: "Confirmar cancelamento",
-            style: "destructive",
+            label: "Confirmar cancelamento",
+            tone: "danger",
             onPress: async () => {
               setCancelingUri(event.uri);
               try {
                 const result = await cancelEvent(event.uri);
                 if (result.success) {
                   await loadEvents(true);
-                  RNAlert.alert("Sucesso", "Reunião cancelada com sucesso!");
+                  showDialog({
+                    variant: "success",
+                    title: "Reunião cancelada",
+                    message: "Sua orientação foi cancelada com sucesso.",
+                  });
                 } else if (
                   result.code === "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED"
                 ) {
@@ -220,50 +240,74 @@ export function Profile() {
 
                   if (result.cancelUrl) {
                     const cancelUrl = result.cancelUrl;
-                    RNAlert.alert("Reunião compartilhada", message, [
-                      { text: "Fechar", style: "cancel" },
-                      {
-                        text: "Cancelar minha participação",
-                        onPress: async () => {
-                          try {
-                            pendingExternalRefreshRef.current = true;
-                            await Linking.openURL(cancelUrl);
-                          } catch {
-                            pendingExternalRefreshRef.current = false;
-                            RNAlert.alert(
-                              "Erro",
-                              "Não foi possível abrir o link de cancelamento."
-                            );
-                          }
-                        },
+                    showDialog({
+                      variant: "warning",
+                      title: "Reunião compartilhada",
+                      message,
+                      details: {
+                        title: event.name,
+                        date: eventDateFormatted,
+                        time: eventTimeFormatted,
                       },
-                    ]);
+                      actions: [
+                        { label: "Fechar", tone: "secondary" },
+                        {
+                          label: "Cancelar minha participação",
+                          tone: "primary",
+                          onPress: async () => {
+                            try {
+                              pendingExternalRefreshRef.current = true;
+                              await Linking.openURL(cancelUrl);
+                            } catch {
+                              pendingExternalRefreshRef.current = false;
+                              showDialog({
+                                variant: "danger",
+                                title: "Erro",
+                                message:
+                                  "Não foi possível abrir o link de cancelamento.",
+                              });
+                            }
+                          },
+                        },
+                      ],
+                    });
                   } else {
-                    RNAlert.alert("Reunião compartilhada", message);
+                    showDialog({
+                      variant: "warning",
+                      title: "Reunião compartilhada",
+                      message,
+                    });
                   }
                 } else {
-                  RNAlert.alert(
-                    "Erro",
-                    result.error || "Não foi possível cancelar a reunião."
-                  );
+                  showDialog({
+                    variant: "danger",
+                    title: "Erro",
+                    message:
+                      result.error || "Não foi possível cancelar a reunião.",
+                  });
                 }
               } catch (error) {
                 console.error("Erro ao cancelar evento:", error);
-                RNAlert.alert("Erro", "Não foi possível cancelar a reunião.");
+                showDialog({
+                  variant: "danger",
+                  title: "Erro",
+                  message: "Não foi possível cancelar a reunião.",
+                });
               } finally {
                 setCancelingUri(null);
               }
             },
           },
         ],
-        { cancelable: false }
-      );
+      });
     } catch (error) {
       console.error("Erro ao verificar participantes do evento:", error);
-      RNAlert.alert(
-        "Erro",
-        "Não foi possível verificar se você tem permissão para cancelar este evento."
-      );
+      showDialog({
+        variant: "danger",
+        title: "Erro",
+        message:
+          "Não foi possível verificar se você tem permissão para cancelar este evento.",
+      });
     }
   };
 

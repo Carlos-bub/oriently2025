@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { ActivityIndicator, Alert, useWindowDimensions } from "react-native";
+import { ActivityIndicator, useWindowDimensions } from "react-native";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "styled-components/native";
 
 import { useAuth } from "../../contexts/AuthContext";
+import { useDialog } from "../../contexts/DialogContext";
 import {
   Container,
   ScrollContent,
@@ -46,6 +47,7 @@ import {
 export function LoginScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn } = useAuth();
+  const { showDialog } = useDialog();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const theme = useTheme();
@@ -102,12 +104,18 @@ export function LoginScreen() {
           false
         );
 
-        Alert.alert("Sucesso", "Login realizado com sucesso!");
+        showDialog({
+          variant: "success",
+          title: "Login realizado!",
+          message: `Bem-vindo(a), ${userName.split(" ")[0]}.`,
+        });
       } else {
-        Alert.alert(
-          "Erro",
-          "Não foi possível validar o token de autenticação do Google."
-        );
+        showDialog({
+          variant: "danger",
+          title: "Erro de autenticação",
+          message:
+            "Não foi possível validar o token de autenticação do Google.",
+        });
       }
     } catch (error: any) {
       console.error("Erro no login com Google:", error);
@@ -134,7 +142,11 @@ export function LoginScreen() {
         }
       }
 
-      Alert.alert("Erro de Login", errorMessage);
+      showDialog({
+        variant: "danger",
+        title: "Erro de Login",
+        message: errorMessage,
+      });
     } finally {
       setIsSubmitting(false);
     }

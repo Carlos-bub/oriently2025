@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Modal,
   useWindowDimensions,
@@ -18,6 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { useTheme } from "styled-components/native";
 
 import "../../utils/calendarLocale";
+import { useDialog } from "../../contexts/DialogContext";
 import { getFriendlyApiErrorMessage } from "../../services/apiClient";
 import {
   getUserInfo,
@@ -96,6 +96,7 @@ export function Schedule() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const theme = useTheme();
+  const { showDialog } = useDialog();
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedHour, setSelectedHour] = useState<string | null>(null);
@@ -238,7 +239,11 @@ export function Schedule() {
     if (submittingRef.current) return;
 
     if (!selectedDate || !selectedHour || !eventTypeUri) {
-      Alert.alert("Erro", "Selecione uma data e horário.");
+      showDialog({
+        variant: "warning",
+        title: "Dados incompletos",
+        message: "Selecione uma data e um horário antes de confirmar.",
+      });
       return;
     }
 
@@ -269,10 +274,12 @@ export function Schedule() {
         setShowConfirmationModal(false);
         setSelectedHour(null);
         setIdempotencyKey(null);
-        Alert.alert(
-          "Horário indisponível",
-          result.error || "Este horário não está mais disponível."
-        );
+        showDialog({
+          variant: "warning",
+          title: "Horário indisponível",
+          message:
+            result.error || "Este horário não está mais disponível.",
+        });
         fetchAvailableTimes();
         return;
       }
@@ -284,21 +291,24 @@ export function Schedule() {
         result.code === "BOOKING_IN_PROGRESS"
       ) {
         setShowConfirmationModal(false);
-        Alert.alert(
-          "Verifique sua agenda",
-          result.error ||
+        showDialog({
+          variant: "warning",
+          title: "Verifique sua agenda",
+          message:
+            result.error ||
             "Não foi possível confirmar a resposta a tempo. Consulte sua agenda antes de tentar novamente.",
-          [
-            { text: "Fechar", style: "cancel" },
+          actions: [
+            { label: "Fechar", tone: "secondary" },
             {
-              text: "Ver agenda",
+              label: "Ver agenda",
+              tone: "primary",
               onPress: () => {
                 resetState();
                 navigation.navigate("Profile");
               },
             },
-          ]
-        );
+          ],
+        });
         return;
       }
 
@@ -306,20 +316,26 @@ export function Schedule() {
         setShowConfirmationModal(false);
         setSelectedHour(null);
         setIdempotencyKey(null);
-        Alert.alert(
-          "Solicitação inválida",
-          result.error || "Selecione o horário novamente."
-        );
+        showDialog({
+          variant: "warning",
+          title: "Solicitação inválida",
+          message: result.error || "Selecione o horário novamente.",
+        });
         return;
       }
 
-      Alert.alert(
-        "Não foi possível agendar",
-        result.error || "Falha ao confirmar o agendamento."
-      );
+      showDialog({
+        variant: "danger",
+        title: "Não foi possível agendar",
+        message: result.error || "Falha ao confirmar o agendamento.",
+      });
     } catch (error) {
       console.error("Erro no agendamento:", error);
-      Alert.alert("Erro", "Não foi possível concluir o agendamento.");
+      showDialog({
+        variant: "danger",
+        title: "Erro",
+        message: "Não foi possível concluir o agendamento.",
+      });
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
@@ -335,7 +351,11 @@ export function Schedule() {
     selectedDateObj.setHours(0, 0, 0, 0);
 
     if (selectedDateObj < today) {
-      Alert.alert("Data inválida", "Por favor, selecione uma data futura.");
+      showDialog({
+        variant: "warning",
+        title: "Data inválida",
+        message: "Por favor, selecione uma data futura no calendário.",
+      });
       return;
     }
 

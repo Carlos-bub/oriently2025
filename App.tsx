@@ -3,6 +3,7 @@ import React, { useEffect, useCallback } from "react";
 import { ThemeProvider } from "styled-components/native";
 import * as SplashScreen from "expo-splash-screen";
 import { NavigationContainer } from "@react-navigation/native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 //Fontes
@@ -25,6 +26,7 @@ import {
 //Componentes
 import { Loading } from "./src/components/Loading";
 import theme from "./src/global/styles/theme";
+import { DialogProvider } from "./src/contexts/DialogContext";
 import { AuthContextProvider } from "./src/contexts/AuthContext";
 import { Routes } from "./src/routes";
 
@@ -75,13 +77,17 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <AuthContextProvider>
-        <NavigationContainer onReady={onLayoutRootView}>
-          <Routes />
-          <StatusBar style="light" backgroundColor="transparent" translucent />
-        </NavigationContainer>
-      </AuthContextProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider theme={theme}>
+        <DialogProvider>
+          <AuthContextProvider>
+            <NavigationContainer onReady={onLayoutRootView}>
+              <Routes />
+              <StatusBar style="light" backgroundColor="transparent" translucent />
+            </NavigationContainer>
+          </AuthContextProvider>
+        </DialogProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
