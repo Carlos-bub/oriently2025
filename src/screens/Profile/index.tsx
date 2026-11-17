@@ -91,8 +91,6 @@ import {
   StateDescription,
   RetryButton,
   RetryButtonText,
-  FloatingNewButton,
-  FloatingNewButtonText,
 } from "./styles";
 
 type FilterTab = "upcoming" | "history";
@@ -734,7 +732,7 @@ export function Profile() {
         ItemSeparatorComponent={() => <Divider />}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingBottom: Math.max(insets.bottom, 16) + 144,
+          paddingBottom: Math.max(insets.bottom, 16) + 96,
           flexGrow: isCurrentTabEmpty ? 1 : 0,
         }}
         stickySectionHeadersEnabled={false}
@@ -838,17 +836,6 @@ export function Profile() {
           </StateCard>
         }
       />
-
-      <FloatingNewButton
-        bottomOffset={Math.max(insets.bottom, 12) + 74}
-        activeOpacity={0.88}
-        onPress={() => navigation.navigate("Schedule")}
-        accessibilityRole="button"
-        accessibilityLabel="Nova orientação"
-      >
-        <Feather name="plus" size={16} color="#FFFFFF" />
-        <FloatingNewButtonText>Nova orientação</FloatingNewButtonText>
-      </FloatingNewButton>
     </Container>
   );
 }
