@@ -47,9 +47,21 @@ import {
   HoursTitle,
   SelectedDateBadge,
   SelectedDateBadgeText,
+  SessionInfoBanner,
+  SessionInfoBannerText,
   HoursGrid,
   ScheduleItem,
   ScheduleText,
+  SelectedSlotSummaryCard,
+  SelectedSlotTopRow,
+  SelectedSlotLeft,
+  SelectedSlotIconBox,
+  SelectedSlotTextCol,
+  SelectedSlotTitle,
+  SelectedSlotSubtitle,
+  SelectedSlotDot,
+  AdvanceButton,
+  AdvanceButtonText,
   StateBox,
   StateIconBadge,
   StateCompassDot,
@@ -232,7 +244,6 @@ export function Schedule() {
     if (!eventTypeUri) return;
     setSelectedHour(isoUtc);
     setIdempotencyKey(generateIdempotencyKey(eventTypeUri, isoUtc));
-    setShowConfirmationModal(true);
   };
 
   const handleConfirm = async () => {
@@ -431,12 +442,14 @@ export function Schedule() {
     <Container>
       <Header topInset={insets.top}>
         <HeaderTag>
-          <Feather name="compass" size={11} color={theme.colors.primary_dark} />
-          <HeaderTagText>Orientação TCC</HeaderTagText>
+          <Feather name="compass" size={12} color="#005bb1" />
+          <HeaderTagText>
+            {selectedEventType ? selectedEventType.name : "Orientação TCC"}
+          </HeaderTagText>
         </HeaderTag>
         <Title>Agendar orientação</Title>
         <Subtitle>
-          Escolha o melhor momento para conversar com seu orientador
+          Selecione o melhor dia e horário para conversar com seu orientador.
         </Subtitle>
       </Header>
 
@@ -477,19 +490,19 @@ export function Schedule() {
               markedDates={markedDates}
               minDate={todayStr}
               theme={{
-                backgroundColor: theme.colors.background,
-                calendarBackground: theme.colors.background,
-                todayTextColor: theme.colors.primary_dark,
-                todayBackgroundColor: theme.colors.boxprofile,
-                dayTextColor: theme.colors.text_primary,
+                backgroundColor: "#FFFFFF",
+                calendarBackground: "#FFFFFF",
+                todayTextColor: "#005bb1",
+                todayBackgroundColor: "#e9edff",
+                dayTextColor: "#0f1b32",
                 textDisabledColor: "#CBD5E1",
-                arrowColor: theme.colors.primary_dark,
-                monthTextColor: theme.colors.text_primary,
-                textSectionTitleColor: theme.colors.text_secondary,
-                selectedDayBackgroundColor: theme.colors.primary,
+                arrowColor: "#005bb1",
+                monthTextColor: "#0f1b32",
+                textSectionTitleColor: "#414754",
+                selectedDayBackgroundColor: "#005bb1",
                 selectedDayTextColor: "#FFFFFF",
                 textDayFontFamily: theme.fonts.Subtituloslight,
-                textMonthFontFamily: theme.fonts.Subtitulos,
+                textMonthFontFamily: theme.fonts.Titulos,
                 textDayHeaderFontFamily: theme.fonts.buttons,
                 textDayFontSize: 14,
                 textMonthFontSize: 16,
@@ -540,16 +553,24 @@ export function Schedule() {
                   <HoursTitle>Horários disponíveis</HoursTitle>
                 </HoursTitleGroup>
                 <SelectedDateBadge>
-                  <Feather
-                    name="calendar"
-                    size={11}
-                    color={theme.colors.primary_dark}
-                  />
+                  <Feather name="calendar" size={11} color="#005bb1" />
                   <SelectedDateBadgeText>
                     {format(new Date(`${selectedDate}T00:00:00`), "dd/MM/yyyy")}
                   </SelectedDateBadgeText>
                 </SelectedDateBadge>
               </HoursHeaderRow>
+
+              {selectedEventType && (
+                <SessionInfoBanner>
+                  <Feather name="video" size={14} color="#514fb5" />
+                  <SessionInfoBannerText numberOfLines={1}>
+                    {selectedEventType.name}
+                    {selectedEventType.duration
+                      ? ` • Sessão de ${selectedEventType.duration} min`
+                      : ""}
+                  </SessionInfoBannerText>
+                </SessionInfoBanner>
+              )}
 
               {loadingTimes ? (
                 <StateBox>
@@ -594,6 +615,13 @@ export function Schedule() {
                           disabled: submitting,
                         }}
                       >
+                        {isSelected && (
+                          <Feather
+                            name="check-circle"
+                            size={13}
+                            color="#FFFFFF"
+                          />
+                        )}
                         <ScheduleText isSelected={isSelected}>
                           {formatHourLabel(item)}
                         </ScheduleText>
@@ -616,6 +644,50 @@ export function Schedule() {
                     calendário.
                   </StateText>
                 </StateBox>
+              )}
+
+              {selectedHour && hours.includes(selectedHour) && (
+                <SelectedSlotSummaryCard>
+                  <SelectedSlotTopRow>
+                    <SelectedSlotLeft>
+                      <SelectedSlotIconBox>
+                        <Feather name="calendar" size={18} color="#005bb1" />
+                      </SelectedSlotIconBox>
+                      <SelectedSlotTextCol>
+                        <SelectedSlotTitle numberOfLines={1}>
+                          {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(
+                            "pt-BR",
+                            {
+                              day: "numeric",
+                              month: "long",
+                            }
+                          )}
+                          , às {formatHourLabel(selectedHour)}
+                        </SelectedSlotTitle>
+                        <SelectedSlotSubtitle numberOfLines={1}>
+                          {selectedEventType?.name || "Orientação"}
+                          {selectedEventType?.duration
+                            ? ` • ${selectedEventType.duration} minutos`
+                            : ""}
+                        </SelectedSlotSubtitle>
+                      </SelectedSlotTextCol>
+                    </SelectedSlotLeft>
+                    <SelectedSlotDot />
+                  </SelectedSlotTopRow>
+
+                  <AdvanceButton
+                    activeOpacity={0.86}
+                    disabled={submitting}
+                    onPress={() => setShowConfirmationModal(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Avançar para confirmação"
+                  >
+                    <AdvanceButtonText>
+                      Avançar para confirmação
+                    </AdvanceButtonText>
+                    <Feather name="arrow-right" size={16} color="#FFFFFF" />
+                  </AdvanceButton>
+                </SelectedSlotSummaryCard>
               )}
             </HoursSection>
           )}

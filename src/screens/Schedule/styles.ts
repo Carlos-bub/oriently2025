@@ -1,165 +1,160 @@
-import styled from "styled-components/native";
-import { RFValue } from "react-native-responsive-fontsize";
-import { DefaultTheme } from "styled-components/native";
-import theme from "src/global/styles/theme";
+import styled, { DefaultTheme } from "styled-components/native";
+
+type ThemedProps = { theme: DefaultTheme };
 
 export const Container = styled.View`
   flex: 1;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.surface};
+  background-color: #f9f9ff;
 `;
 
-export const ScrollBody = styled.ScrollView.attrs({
-  showsVerticalScrollIndicator: false,
-})`
+export const ScrollBody = styled.ScrollView`
   flex: 1;
 `;
 
 export const Header = styled.View<{ topInset: number }>`
-  padding-top: ${(props: { topInset: number }) => props.topInset + 12}px;
+  width: 100%;
+  background-color: #f9f9ff;
+  padding-top: ${({ topInset }: { topInset: number }) => topInset + 12}px;
+  padding-bottom: 12px;
   padding-horizontal: 20px;
-  padding-bottom: 14px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.surface};
-  border-bottom-width: 1px;
-  border-bottom-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.border};
 `;
 
 export const HeaderTag = styled.View`
   align-self: flex-start;
   flex-direction: row;
   align-items: center;
-  gap: 5px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.boxprofile};
-  padding: 3px 9px;
-  border-radius: 10px;
-  margin-bottom: 6px;
+  gap: 6px;
+  background-color: #dce1ff;
+  padding: 4px 11px;
+  border-radius: 999px;
+  margin-bottom: 10px;
 `;
 
 export const HeaderTagText = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
-  font-family: ${theme.fonts.buttons};
-  font-size: ${RFValue(10)}px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 10.5px;
+  color: #005bb1;
+  letter-spacing: 0.3px;
 `;
 
 export const Title = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
-  font-family: ${theme.fonts.Titulos};
-  font-size: ${RFValue(20)}px;
-  line-height: ${RFValue(26)}px;
-  margin-bottom: 3px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Titulos};
+  font-size: 25px;
+  line-height: 31px;
+  color: #0f1b32;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
 `;
 
 export const Subtitle = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
-  font-family: ${theme.fonts.Subtituloslight};
-  font-size: ${RFValue(12.5)}px;
-  line-height: ${RFValue(17)}px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtituloslight};
+  font-size: 13.5px;
+  line-height: 19px;
+  color: #414754;
 `;
 
 export const ContentWrapper = styled.View`
-  padding: 16px 20px 0px 20px;
+  width: 100%;
+  max-width: 480px;
+  align-self: center;
+  padding-horizontal: 20px;
+  padding-top: 6px;
 `;
 
-export const EventTypeList = styled.ScrollView.attrs({
-  horizontal: true,
-  showsHorizontalScrollIndicator: false,
-})`
+export const EventTypeList = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 14px;
 `;
 
-export const EventTypeChip = styled.TouchableOpacity<{ isSelected?: boolean }>`
-  background-color: ${(props: { theme: DefaultTheme; isSelected?: boolean }) =>
-    props.isSelected
-      ? props.theme.colors.primary
-      : props.theme.colors.background};
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme; isSelected?: boolean }) =>
-    props.isSelected ? props.theme.colors.primary : props.theme.colors.border};
-  padding: 7px 13px;
-  border-radius: 14px;
-  margin-right: 8px;
-  justify-content: center;
-  align-items: center;
+export const EventTypeChip = styled.TouchableOpacity<{ isSelected: boolean }>`
+  padding: 7px 14px;
+  border-radius: 999px;
+  background-color: ${({ isSelected }: { isSelected: boolean }) =>
+    isSelected ? "#005bb1" : "#e9edff"};
 `;
 
-export const EventTypeChipText = styled.Text<{ isSelected?: boolean }>`
-  color: ${(props: { theme: DefaultTheme; isSelected?: boolean }) =>
-    props.isSelected
-      ? props.theme.colors.background
-      : props.theme.colors.text_primary};
-  font-family: ${theme.fonts.buttons};
-  font-size: ${RFValue(11.5)}px;
+export const EventTypeChipText = styled.Text<{ isSelected: boolean }>`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 12px;
+  color: ${({ isSelected }: { isSelected: boolean }) =>
+    isSelected ? "#FFFFFF" : "#005bb1"};
 `;
 
 export const CalendarWrapper = styled.View`
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.background};
-  border-radius: 18px;
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  padding: 6px 8px;
-  overflow: hidden;
-  elevation: 1;
-  shadow-color: #172b4d;
-  shadow-offset: 0px 2px;
-  shadow-opacity: 0.04;
-  shadow-radius: 6px;
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 10px;
+  margin-bottom: 20px;
+  shadow-color: #258bff;
+  shadow-offset: 0px 8px;
+  shadow-opacity: 0.07;
+  shadow-radius: 18px;
+  elevation: 3;
 `;
 
 export const HoursSection = styled.View`
-  margin-top: 20px;
+  width: 100%;
 `;
 
 export const HoursHeaderRow = styled.View`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
   gap: 8px;
+  margin-bottom: 10px;
 `;
 
 export const HoursTitleGroup = styled.View`
   flex-direction: row;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
 `;
 
 export const HoursSectionDot = styled.View`
-  width: 7px;
-  height: 7px;
-  border-radius: 3.5px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary};
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: #005bb1;
 `;
 
 export const HoursTitle = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
-  font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(14)}px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Titulos};
+  font-size: 16px;
+  color: #0f1b32;
 `;
 
 export const SelectedDateBadge = styled.View`
   flex-direction: row;
   align-items: center;
   gap: 5px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.boxprofile};
+  background-color: #dce1ff;
   padding: 4px 10px;
-  border-radius: 10px;
+  border-radius: 999px;
 `;
 
 export const SelectedDateBadgeText = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
-  font-family: ${theme.fonts.buttons};
-  font-size: ${RFValue(11)}px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 11px;
+  color: #005bb1;
+`;
+
+export const SessionInfoBanner = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  background-color: #f1f3ff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+`;
+
+export const SessionInfoBannerText = styled.Text`
+  flex: 1;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtituloslight};
+  font-size: 12.5px;
+  color: #0f1b32;
 `;
 
 export const HoursGrid = styled.View`
@@ -169,200 +164,254 @@ export const HoursGrid = styled.View`
 `;
 
 export const ScheduleItem = styled.TouchableOpacity<{
-  isSelected?: boolean;
   cardWidth: number;
-  disabled?: boolean;
+  isSelected: boolean;
 }>`
-  width: ${(props: { cardWidth: number }) => props.cardWidth}px;
-  background-color: ${(props: { theme: DefaultTheme; isSelected?: boolean }) =>
-    props.isSelected
-      ? props.theme.colors.primary
-      : props.theme.colors.background};
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme; isSelected?: boolean }) =>
-    props.isSelected ? props.theme.colors.primary : props.theme.colors.border};
-  padding-vertical: 11px;
-  padding-horizontal: 8px;
-  border-radius: 12px;
+  width: ${({ cardWidth }: { cardWidth: number }) => cardWidth}px;
+  height: 46px;
+  border-radius: 14px;
+  background-color: ${({ isSelected }: { isSelected: boolean }) =>
+    isSelected ? "#005bb1" : "#FFFFFF"};
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  opacity: ${(props: { disabled?: boolean }) => (props.disabled ? 0.55 : 1)};
+  gap: 5px;
+  shadow-color: #258bff;
+  shadow-offset: 0px 4px;
+  shadow-opacity: ${({ isSelected }: { isSelected: boolean }) =>
+    isSelected ? 0.22 : 0.05};
+  shadow-radius: 10px;
+  elevation: ${({ isSelected }: { isSelected: boolean }) =>
+    isSelected ? 3 : 1};
 `;
 
-export const ScheduleText = styled.Text<{ isSelected?: boolean }>`
-  color: ${(props: { theme: DefaultTheme; isSelected?: boolean }) =>
-    props.isSelected
-      ? props.theme.colors.background
-      : props.theme.colors.text_primary};
-  font-size: ${RFValue(13)}px;
-  font-family: ${theme.fonts.Subtitulos};
+export const ScheduleText = styled.Text<{ isSelected: boolean }>`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 14px;
+  color: ${({ isSelected }: { isSelected: boolean }) =>
+    isSelected ? "#FFFFFF" : "#0f1b32"};
+`;
+
+export const SelectedSlotSummaryCard = styled.View`
+  margin-top: 18px;
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 16px;
+  shadow-color: #258bff;
+  shadow-offset: 0px 10px;
+  shadow-opacity: 0.09;
+  shadow-radius: 20px;
+  elevation: 4;
+`;
+
+export const SelectedSlotTopRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+`;
+
+export const SelectedSlotLeft = styled.View`
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+`;
+
+export const SelectedSlotIconBox = styled.View`
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background-color: #e9edff;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const SelectedSlotTextCol = styled.View`
+  flex: 1;
+`;
+
+export const SelectedSlotTitle = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Titulos};
+  font-size: 14.5px;
+  color: #0f1b32;
+  margin-bottom: 2px;
+`;
+
+export const SelectedSlotSubtitle = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtituloslight};
+  font-size: 12px;
+  color: #414754;
+`;
+
+export const SelectedSlotDot = styled.View`
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: #005bb1;
+`;
+
+export const AdvanceButton = styled.TouchableOpacity`
+  width: 100%;
+  height: 48px;
+  border-radius: 999px;
+  background-color: #005bb1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  shadow-color: #005bb1;
+  shadow-offset: 0px 6px;
+  shadow-opacity: 0.24;
+  shadow-radius: 12px;
+  elevation: 3;
+`;
+
+export const AdvanceButtonText = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 14px;
+  color: #ffffff;
 `;
 
 export const StateBox = styled.View`
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.background};
+  background-color: #ffffff;
   border-radius: 18px;
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  padding: 18px 16px;
+  padding: 22px 18px;
   align-items: center;
   justify-content: center;
+  shadow-color: #258bff;
+  shadow-offset: 0px 6px;
+  shadow-opacity: 0.05;
+  shadow-radius: 14px;
+  elevation: 2;
 `;
 
 export const StateIconBadge = styled.View`
-  width: 40px;
-  height: 40px;
+  position: relative;
+  width: 46px;
+  height: 46px;
   border-radius: 14px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.surface};
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
+  background-color: #f1f3ff;
   align-items: center;
   justify-content: center;
-  position: relative;
   margin-bottom: 10px;
 `;
 
 export const StateCompassDot = styled.View`
   position: absolute;
-  bottom: -3px;
-  right: -3px;
-  width: 14px;
-  height: 14px;
-  border-radius: 7px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.lavender};
+  right: -2px;
+  bottom: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 6px;
+  background-color: #005bb1;
   border-width: 2px;
-  border-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.background};
+  border-color: #ffffff;
 `;
 
 export const StateTitle = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
-  font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(13.5)}px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Titulos};
+  font-size: 15px;
+  color: #0f1b32;
+  margin-bottom: 4px;
   text-align: center;
-  margin-bottom: 3px;
 `;
 
 export const StateText = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
-  font-family: ${theme.fonts.Subtituloslight};
-  font-size: ${RFValue(12)}px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtituloslight};
+  font-size: 13px;
+  line-height: 19px;
+  color: #414754;
   text-align: center;
-  line-height: ${RFValue(17)}px;
 `;
 
 export const RetryButton = styled.TouchableOpacity`
   margin-top: 12px;
   padding: 8px 16px;
-  border-radius: 12px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.boxprofile};
+  border-radius: 999px;
+  background-color: #e9edff;
 `;
 
 export const RetryButtonText = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
-  font-family: ${theme.fonts.buttons};
-  font-size: ${RFValue(12.5)}px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 12.5px;
+  color: #005bb1;
 `;
 
-/* ── Confirmation Modal ── */
 export const ModalOverlay = styled.View<{
-  topInset?: number;
-  bottomInset?: number;
+  topInset: number;
+  bottomInset: number;
 }>`
   flex: 1;
+  background-color: rgba(15, 27, 50, 0.45);
   justify-content: center;
   align-items: center;
-  background-color: rgba(23, 43, 77, 0.45);
-  padding-top: ${(props: { topInset?: number }) =>
-    Math.max(props.topInset || 0, 20)}px;
-  padding-bottom: ${(props: { bottomInset?: number }) =>
-    Math.max(props.bottomInset || 0, 20)}px;
-  padding-horizontal: 20px;
+  padding-top: ${({ topInset }: { topInset: number }) => topInset + 16}px;
+  padding-bottom: ${({ bottomInset }: { bottomInset: number }) =>
+    bottomInset + 16}px;
+  padding-horizontal: 22px;
 `;
 
 export const ModalContent = styled.View`
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.background};
-  padding: 20px;
-  border-radius: 22px;
-  align-items: center;
   width: 100%;
-  max-width: 348px;
-  max-height: 90%;
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  elevation: 8;
-  shadow-color: #172b4d;
-  shadow-offset: 0px 8px;
+  max-width: 380px;
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 22px 20px;
+  shadow-color: #001b3d;
+  shadow-offset: 0px 18px;
   shadow-opacity: 0.16;
-  shadow-radius: 16px;
+  shadow-radius: 32px;
+  elevation: 8;
 `;
 
 export const ModalScroll = styled.ScrollView.attrs({
   showsVerticalScrollIndicator: false,
-  bounces: false,
   contentContainerStyle: {
     alignItems: "center",
   },
-})`
-  width: 100%;
-`;
+})``;
 
 export const ConfirmIconBadge = styled.View`
-  width: 46px;
-  height: 46px;
-  border-radius: 15px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.boxprofile};
-  border-width: 1px;
-  border-color: #dce8fd;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background-color: #e9edff;
   align-items: center;
   justify-content: center;
   margin-bottom: 12px;
 `;
 
 export const ModalTitle = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
-  font-size: ${RFValue(17)}px;
-  font-family: ${theme.fonts.Titulos};
-  margin-bottom: 4px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Titulos};
+  font-size: 19px;
+  color: #0f1b32;
   text-align: center;
+  margin-bottom: 4px;
 `;
 
 export const ModalText = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
-  font-size: ${RFValue(12.5)}px;
-  font-family: ${theme.fonts.Subtituloslight};
-  margin-bottom: 14px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtituloslight};
+  font-size: 13px;
+  color: #414754;
   text-align: center;
-  line-height: ${RFValue(18)}px;
+  margin-bottom: 16px;
 `;
 
 export const ModalDetailsCard = styled.View`
   width: 100%;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.surface};
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
+  background-color: #f1f3ff;
   border-radius: 16px;
-  padding: 13px 14px;
+  padding: 14px;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 `;
 
 export const ModalDetailTitle = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
-  font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(13.5)}px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Titulos};
+  font-size: 14px;
+  color: #0f1b32;
   margin-bottom: 2px;
 `;
 
@@ -373,66 +422,52 @@ export const ModalDetailRow = styled.View`
 `;
 
 export const ModalDetailText = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
-  font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(12.5)}px;
-  flex: 1;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtituloslight};
+  font-size: 13px;
+  color: #0f1b32;
 `;
 
 export const ModalButtonContainer = styled.View`
+  width: 100%;
   flex-direction: row;
   gap: 10px;
-  width: 100%;
 `;
 
 export const ModalButton = styled.TouchableOpacity<{ isConfirm?: boolean }>`
-  flex: ${(props: { isConfirm?: boolean }) => (props.isConfirm ? 1.35 : 1)};
-  min-height: 44px;
-  padding-vertical: 11px;
-  padding-horizontal: 12px;
-  background-color: ${(props: { theme: DefaultTheme; isConfirm?: boolean }) =>
-    props.isConfirm ? props.theme.colors.primary : props.theme.colors.surface};
-  border-width: ${(props: { isConfirm?: boolean }) =>
-    props.isConfirm ? "0px" : "1px"};
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  border-radius: 14px;
+  flex: 1;
+  height: 46px;
+  border-radius: 999px;
+  background-color: ${({ isConfirm }: { isConfirm?: boolean }) =>
+    isConfirm ? "#005bb1" : "#f1f3ff"};
   align-items: center;
   justify-content: center;
 `;
 
 export const ModalButtonText = styled.Text<{ isConfirm?: boolean }>`
-  color: ${(props: { theme: DefaultTheme; isConfirm?: boolean }) =>
-    props.isConfirm
-      ? props.theme.colors.background
-      : props.theme.colors.text_secondary};
-  font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(13)}px;
-  text-align: center;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 13.5px;
+  color: ${({ isConfirm }: { isConfirm?: boolean }) =>
+    isConfirm ? "#FFFFFF" : "#414754"};
 `;
 
-/* ── Success Modal ── */
 export const SuccessIconBadge = styled.View`
-  width: 54px;
-  height: 54px;
-  border-radius: 27px;
-  background-color: #e6f6ec;
-  border-width: 1.5px;
-  border-color: #bbf7d0;
+  width: 56px;
+  height: 56px;
+  border-radius: 20px;
+  background-color: #dcfce7;
   align-items: center;
   justify-content: center;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 `;
 
 export const SuccessStatusPill = styled.View`
   flex-direction: row;
   align-items: center;
-  gap: 5px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.boxprofile};
-  padding: 3px 10px;
-  border-radius: 10px;
-  margin-bottom: 8px;
+  gap: 6px;
+  background-color: #dcfce7;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 10px;
 `;
 
 export const SuccessStatusDot = styled.View`
@@ -443,18 +478,14 @@ export const SuccessStatusDot = styled.View`
 `;
 
 export const SuccessStatusText = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary_dark};
-  font-family: ${theme.fonts.buttons};
-  font-size: ${RFValue(10)}px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 11px;
+  color: #15803d;
 `;
 
 export const SuccessDetailsCard = styled.View`
   width: 100%;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.surface};
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
+  background-color: #f1f3ff;
   border-radius: 16px;
   padding: 14px;
   gap: 8px;
@@ -462,10 +493,9 @@ export const SuccessDetailsCard = styled.View`
 `;
 
 export const SuccessEventTitle = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_primary};
-  font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(14.5)}px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Titulos};
+  font-size: 14.5px;
+  color: #0f1b32;
   margin-bottom: 2px;
 `;
 
@@ -476,11 +506,10 @@ export const SuccessDetailRow = styled.View`
 `;
 
 export const SuccessDetailText = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
-  font-family: ${theme.fonts.Subtituloslight};
-  font-size: ${RFValue(12.5)}px;
   flex: 1;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtituloslight};
+  font-size: 13px;
+  color: #0f1b32;
 `;
 
 export const SuccessButtonsStack = styled.View`
@@ -490,35 +519,30 @@ export const SuccessButtonsStack = styled.View`
 
 export const SuccessPrimaryButton = styled.TouchableOpacity`
   width: 100%;
-  padding-vertical: 12px;
-  border-radius: 14px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary};
+  height: 46px;
+  border-radius: 999px;
+  background-color: #005bb1;
   align-items: center;
   justify-content: center;
 `;
 
 export const SuccessPrimaryButtonText = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) => props.theme.colors.background};
-  font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(13.5)}px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 14px;
+  color: #ffffff;
 `;
 
 export const SuccessSecondaryButton = styled.TouchableOpacity`
   width: 100%;
-  padding-vertical: 11px;
-  border-radius: 14px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.surface};
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
+  height: 44px;
+  border-radius: 999px;
+  background-color: #f1f3ff;
   align-items: center;
   justify-content: center;
 `;
 
 export const SuccessSecondaryButtonText = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.text_secondary};
-  font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(13)}px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 13.5px;
+  color: #005bb1;
 `;
