@@ -30,9 +30,13 @@ O projeto combina uma interface em **React Native com Expo** e um **backend BFF 
 
 A identidade visual do Oriently utiliza elementos de bússola, calendário e trajetória para representar a jornada de orientação acadêmica.
 
-| Início (Home) |
-|:---:|
-| <img src="docs/images/home.png" width="240" alt="Tela inicial do Oriently" /> |
+| Login | Início (Home) | Agendamento |
+|:---:|:---:|:---:|
+| <img src="docs/images/login.png" width="230" alt="Tela de login do Oriently" /> | <img src="docs/images/home.png" width="230" alt="Tela inicial do Oriently" /> | <img src="docs/images/agendar.png" width="230" alt="Tela de agendamento" /> |
+
+| Agenda | Detalhes da Orientação |
+|:---:|:---:|
+| <img src="docs/images/agenda.png" width="230" alt="Lista de agendamentos" /> | <img src="docs/images/detalhes.png" width="230" alt="Detalhes da orientação" /> |
 
 > Para atualizar ou capturar todas as telas (`login.png`, `home.png`, `agendar.png`, `agenda.png`, `detalhes.png`) a partir de um aparelho Android conectado via ADB, execute `./scripts/capture-screenshots.ps1`.
 

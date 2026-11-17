@@ -523,6 +523,7 @@ export const ActionsStack = styled.View`
 `;
 
 export const GoogleButton = styled.TouchableOpacity`
+  position: relative;
   width: 100%;
   height: 54px;
   border-radius: 16px;
@@ -531,13 +532,18 @@ export const GoogleButton = styled.TouchableOpacity`
   border-color: #e2e8f0;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  padding-horizontal: 18px;
+  justify-content: center;
+  padding-horizontal: 44px;
   shadow-color: #0f1b32;
   shadow-offset: 0px 6px;
   shadow-opacity: 0.06;
   shadow-radius: 12px;
   elevation: 2;
+`;
+
+export const GoogleButtonArrow = styled.View`
+  position: absolute;
+  right: 18px;
 `;
 
 export const GoogleButtonLeft = styled.View`

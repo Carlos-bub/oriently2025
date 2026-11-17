@@ -70,6 +70,7 @@ import {
   ActionsStack,
   GoogleButton,
   GoogleButtonLeft,
+  GoogleButtonArrow,
   GoogleButtonText,
   DemoButton,
   DemoButtonText,
@@ -494,7 +495,9 @@ export function LoginScreen() {
                 </GoogleButtonText>
               </GoogleButtonLeft>
 
-              <Feather name="arrow-right" size={18} color="#64748B" />
+              <GoogleButtonArrow>
+                <Feather name="arrow-right" size={18} color="#64748B" />
+              </GoogleButtonArrow>
             </GoogleButton>
 
             <DemoButton
