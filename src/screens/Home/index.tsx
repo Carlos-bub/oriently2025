@@ -60,6 +60,8 @@ import {
   SecondaryTitle,
   SecondaryDescription,
   SectionHeaderRow,
+  SectionTitleGroup,
+  SectionDot,
   SectionTitle,
   SectionLinkButton,
   SectionLinkText,
@@ -503,7 +505,7 @@ export function Home() {
             </HeroTextColumn>
 
             {showHeroIllustration && (
-              <HeroIllustrationBox>
+              <HeroIllustrationBox isCompact={isCompactScreen}>
                 <HeroOrbitDotTop />
                 <HeroOrbitDotBottom />
                 <MiniCalendarFrame>
@@ -552,7 +554,10 @@ export function Home() {
           </SecondaryAgendaCard>
 
           <SectionHeaderRow>
-            <SectionTitle>Próxima orientação</SectionTitle>
+            <SectionTitleGroup>
+              <SectionDot />
+              <SectionTitle>Próxima orientação</SectionTitle>
+            </SectionTitleGroup>
             {nextMeeting && (
               <SectionLinkButton
                 activeOpacity={0.75}

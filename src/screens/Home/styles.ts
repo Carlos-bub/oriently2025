@@ -138,12 +138,12 @@ export const ScrollContent = styled.ScrollView.attrs({
 `;
 
 export const Body = styled.View`
-  padding: 22px 20px 32px 20px;
+  padding: 20px 20px 28px 20px;
 `;
 
 /* ── Welcome ── */
 export const WelcomeSection = styled.View`
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 `;
 
 export const GreetingTitle = styled.Text<{ isCompact?: boolean }>`
@@ -177,18 +177,18 @@ export const WelcomeDescription = styled.Text`
 export const HeroScheduleCard = styled.TouchableOpacity`
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.primary};
-  border-radius: 22px;
-  padding: 18px;
+  border-radius: 20px;
+  padding: 16px 18px;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
   overflow: hidden;
-  margin-bottom: 14px;
-  elevation: 5;
+  margin-bottom: 12px;
+  elevation: 4;
   shadow-color: #1544b5;
-  shadow-offset: 0px 6px;
-  shadow-opacity: 0.22;
-  shadow-radius: 12px;
+  shadow-offset: 0px 5px;
+  shadow-opacity: 0.2;
+  shadow-radius: 10px;
 `;
 
 export const HeroTextColumn = styled.View`
@@ -247,9 +247,11 @@ export const HeroActionPillText = styled.Text`
 `;
 
 /* ── Custom Vector Illustration inside Hero Card ── */
-export const HeroIllustrationBox = styled.View`
-  width: 96px;
-  height: 104px;
+export const HeroIllustrationBox = styled.View<{ isCompact?: boolean }>`
+  width: ${(props: { isCompact?: boolean }) =>
+    props.isCompact ? "82px" : "94px"};
+  height: ${(props: { isCompact?: boolean }) =>
+    props.isCompact ? "92px" : "102px"};
   align-items: center;
   justify-content: center;
   position: relative;
@@ -359,11 +361,11 @@ export const SecondaryAgendaCard = styled.TouchableOpacity`
   align-items: center;
   border-width: 1px;
   border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  margin-bottom: 24px;
+  margin-bottom: 22px;
   elevation: 1;
   shadow-color: #172b4d;
   shadow-offset: 0px 2px;
-  shadow-opacity: 0.05;
+  shadow-opacity: 0.04;
   shadow-radius: 6px;
 `;
 
@@ -405,14 +407,28 @@ export const SectionHeaderRow = styled.View`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+`;
+
+export const SectionTitleGroup = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+`;
+
+export const SectionDot = styled.View`
+  width: 7px;
+  height: 7px;
+  border-radius: 3.5px;
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.primary};
 `;
 
 export const SectionTitle = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.text_primary};
   font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(15)}px;
+  font-size: ${RFValue(14)}px;
 `;
 
 export const SectionLinkButton = styled.TouchableOpacity`
@@ -474,15 +490,15 @@ export const MeetingCard = styled.TouchableOpacity`
   flex: 1;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.background};
-  border-radius: 20px;
-  padding: 16px;
+  border-radius: 18px;
+  padding: 14px 16px;
   border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  elevation: 2;
+  border-color: #dce8fd;
+  elevation: 1;
   shadow-color: #172b4d;
   shadow-offset: 0px 2px;
-  shadow-opacity: 0.06;
-  shadow-radius: 8px;
+  shadow-opacity: 0.05;
+  shadow-radius: 6px;
 `;
 
 export const MeetingTopRow = styled.View`
@@ -491,9 +507,9 @@ export const MeetingTopRow = styled.View`
 `;
 
 export const DateHighlightBox = styled.View`
-  width: 52px;
-  padding-vertical: 8px;
-  border-radius: 14px;
+  width: 48px;
+  padding-vertical: 7px;
+  border-radius: 13px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.surface};
   border-width: 1px;
@@ -507,15 +523,15 @@ export const DateHighlightDay = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.primary_dark};
   font-family: ${theme.fonts.Titulos};
-  font-size: ${RFValue(17)}px;
-  line-height: ${RFValue(21)}px;
+  font-size: ${RFValue(16)}px;
+  line-height: ${RFValue(20)}px;
 `;
 
 export const DateHighlightMonth = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.lavender};
   font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(10.5)}px;
+  font-size: ${RFValue(10)}px;
   text-transform: uppercase;
 `;
 
