@@ -2,160 +2,181 @@
 
 [← Voltar ao README](../README.md)
 
-Este guia descreve a configuração **com base na branch `feature/calendly-native-booking`**. Consulte os arquivos `.env.example` do repositório se as opções mudarem.
+Este guia foi pensado para quem acabou de clonar o repositório e quer:
 
-## 1. Pré-requisitos
+1. **Testar o aplicativo rapidamente no Modo Demonstração** (sem backend, sem `.env` e sem credenciais Google/Calendly); ou
+2. **Configurar o ambiente completo** com backend BFF, Google Sign-In e Calendly reais.
 
-- Node.js e npm compatíveis com as dependências declaradas em `package.json` e `server/package.json`.
-- Ambiente de desenvolvimento React Native/Expo preparado para a plataforma escolhida.
-- Android Studio e Android SDK, se for executar `npm run android` localmente.
-- Projeto OAuth configurado no Google Cloud com os identificadores de cliente necessários ao Google Sign-In.
-- Conta Calendly com token de API e permissões necessárias às operações usadas no app, inclusive criação e cancelamento quando aplicável.
-- Um tipo de evento Calendly habilitado para agendamento e configurado com disponibilidade.
+---
 
-> Como o projeto inclui `@react-native-google-signin/google-signin`, utilize um **development build** com o módulo nativo. O Expo Go não substitui esse build para o login Google.
+## 1. Início rápido — Modo demonstração
 
-## 2. Clonar e instalar
+O modo demonstração funciona **offline**, sem precisar iniciar o servidor `server/`, sem criar arquivos `.env` e sem configurar credenciais do Google ou do Calendly. Todos os dados (orientador fictício, tipos de evento, horários futuros, agendamentos e cancelamentos) são simulados localmente em memória (`src/services/demoData.ts`).
 
-```bash
-git clone https://github.com/Carlos-bub/oriently2025.git
-cd oriently2025
-```
+> **Importante sobre Expo Go:** o projeto importa o módulo nativo `@react-native-google-signin/google-signin` na inicialização (`App.tsx` e `Login`). Por isso, **o Expo Go não é compatível** — mesmo para usar apenas o modo demonstração, é necessário gerar ou instalar um **Development Build** Android.
 
-> Enquanto as alterações não forem integradas à `master`, faça checkout da branch com a arquitetura documentada:
->
-> ```bash
-> git checkout feature/calendly-native-booking
-> ```
+### Passos (Android)
 
-Instale separadamente as dependências do servidor e do aplicativo:
+1. Clone o repositório e instale as dependências do aplicativo:
 
-```bash
-npm ci
-cd server
-npm ci
-cd ..
-```
+   ```bash
+   git clone https://github.com/Carlos-bub/oriently2025.git
+   cd oriently2025
+   npm ci
+   ```
 
-## 3. Configurar o backend
+2. Conecte um aparelho Android com **Depuração USB** ativada (ou inicie um emulador Android) e gere/execute o Development Build:
 
-A partir da raiz:
+   ```bash
+   npx expo run:android
+   ```
 
-```bash
-cd server
-cp .env.example .env
-```
+   *(Se o build nativo já estiver instalado no aparelho, basta iniciar o Metro bundler com `npx expo start --dev-client`.)*
 
-No Windows PowerShell, substitua `cp` por `Copy-Item` se preferir.
+3. Na tela de **Login**, toque em **"Explorar modo demo"** para navegar por **Início**, **Agendar**, **Agenda** e **Detalhes da Orientação** com dados fictícios.
 
-Configure `server/.env`:
+---
 
-| Variável | Finalidade |
-| --- | --- |
-| `PORT` | Porta HTTP do BFF, padrão `3333`. |
-| `CALENDLY_API_BASE_URL` | URL base da API, geralmente `https://api.calendly.com`. |
-| `CALENDLY_API_TOKEN` | **Token privado** do Calendly; nunca adicionar ao app. |
-| `CALENDLY_TIMEOUT_MS` | Tempo limite das chamadas ao Calendly. |
-| `ALLOWED_EVENT_TYPE_URIS` | URIs dos tipos de evento permitidos, separadas por vírgula; obrigatórias em `NODE_ENV=production`. |
-| `GOOGLE_CLIENT_IDS` | IDs OAuth do Google aceitos na verificação do ID Token, separados por vírgula. |
-| `CORS_ALLOWED_ORIGINS` | Origens autorizadas para requisições de navegadores. |
+## 2. Pré-requisitos e versões validadas
 
-**Importante:** preencha os valores reais apenas no arquivo `.env` local e nos segredos do seu provedor de hospedagem. Não publique o arquivo nem compartilhe tokens em capturas, logs ou issues.
+- **Node.js:**
+  - **Node.js 20 LTS** (versão validada no workflow de CI em `.github/workflows/ci.yml` e recomendada para Expo SDK 52 / React Native 0.76).
+  - *Validado também localmente com Node.js `v26.13.1` nos scripts de `typecheck` e `test`.*
+- **Android (para build nativo local):**
+  - Android Studio, Android SDK (Platform Tools / `adb`) e JDK 17 configurados nas variáveis de ambiente (`ANDROID_HOME` e `JAVA_HOME`).
+  - Aparelho físico Android com Google Play Services ou emulador Android com imagem Google APIs / Play Store.
+- **Para o modo real (opcional no modo demo):**
+  - Conta no Google Cloud Console com OAuth 2.0 configurado.
+  - Conta no Calendly com Personal Access Token e ao menos um Event Type ativo.
 
-Execute o servidor:
+---
 
-```bash
-npm run build
-npm start
-```
+## 3. Orientações para Windows PowerShell
 
-Em outro terminal, confirme que o healthcheck responde:
+Ao executar comandos no Windows PowerShell:
 
-```bash
-curl http://localhost:3333/health
-```
+- Se o PowerShell bloquear `npm` ou `npx` com erro de `ExecutionPolicy` (`npm.ps1 cannot be loaded`), utilize **`npm.cmd`** e **`npx.cmd`** (ex.: `npm.cmd ci`, `npx.cmd expo run:android`).
+- Em PowerShell 5.1, encadeie comandos com `;` (ou em linhas separadas) em vez de `&&`.
+- Para copiar arquivos de exemplo, use `Copy-Item .env.example .env`.
+- Caso `adb` não esteja no `PATH`, utilize o executável padrão do Android SDK:
 
-Resposta esperada:
+  ```powershell
+  & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" devices
+  ```
 
-```json
-{"ok":true,"service":"oriently-bff"}
-```
+- Ao testar com celular conectado via USB, o redirecionamento de portas evita depender de firewall/IP da rede:
 
-O healthcheck verifica se o processo HTTP está ativo; não confirma, por si só, que o token Calendly ou o Google Sign-In estejam corretamente configurados.
+  ```powershell
+  & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" reverse tcp:8081 tcp:8081
+  & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" reverse tcp:3333 tcp:3333
+  ```
 
-## 4. Configurar o aplicativo
+---
 
-Na raiz do projeto:
+## 4. Modo real — Configuração de Google OAuth, SHA-1 e Calendly
 
-```bash
-cp .env.example .env
-```
+### 4.1. Google Cloud OAuth e SHA-1 Android
 
-Variáveis usadas pelo aplicativo:
+1. Acesse o **Google Cloud Console**, crie ou selecione um projeto e configure a **Tela de permissão OAuth** (*OAuth consent screen*).
+2. Em **Credenciais → Criar credenciais → ID do cliente OAuth**:
+   - **Aplicativo da Web (Web Client ID):** copie o ID gerado (`*.apps.googleusercontent.com`). Ele será usado em:
+     - `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (no `.env` do app);
+     - `GOOGLE_CLIENT_IDS` (no `server/.env` do backend BFF).
+   - **Android:** informe o nome do pacote configurado em `app.json` (**`com.oriently.app`**) e o **certificado SHA-1** do keystore utilizado no build.
+3. Para obter o **SHA-1** do keystore de debug local após gerar a pasta `android/` (`npx expo prebuild --platform android` ou `npx expo run:android`):
 
-| Variável | Finalidade |
-| --- | --- |
-| `EXPO_PUBLIC_BACKEND_URL` | Endereço HTTP(S) do seu BFF acessível pelo dispositivo. |
-| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google Web Client ID utilizado na configuração do Google Sign-In. |
+   ```powershell
+   cd android
+   .\gradlew signingReport
+   cd ..
+   ```
 
-Exemplo ilustrativo para desenvolvimento **na mesma rede local** (ou via `adb reverse tcp:3333 tcp:3333`):
+   *(Ou via `keytool` diretamente no `debug.keystore` padrão em `android/app/debug.keystore` com senha `android`.)*
 
-```dotenv
-EXPO_PUBLIC_BACKEND_URL=http://192.168.1.100:3333
-EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=SEU_WEB_CLIENT_ID.apps.googleusercontent.com
-```
+### 4.2. Token e Event Types do Calendly
 
-**Nunca configure** `EXPO_PUBLIC_API_TOKEN` ou `CALENDLY_API_TOKEN` no aplicativo. Variáveis prefixadas com `EXPO_PUBLIC_` não são segredos.
+1. No painel do **Calendly**, gere um **Personal Access Token** com permissões para consultar usuário, tipos de evento, disponibilidade, eventos agendados e criação/cancelamento de convites (`scheduled_events:write`).
+2. Confirme que existe pelo menos um **Event Type ativo** com horários de disponibilidade configurados.
+3. Obtenha a URI completa do Event Type (ex.: `https://api.calendly.com/event_types/<UUID>`) para preencher `ALLOWED_EVENT_TYPE_URIS` no backend.
 
-### Rede e dispositivo
+---
 
-- Em um aparelho físico via USB, é possível usar `adb reverse tcp:3333 tcp:3333` e `adb reverse tcp:8081 tcp:8081`.
-- Via Wi-Fi na mesma rede local, o IP usado em `EXPO_PUBLIC_BACKEND_URL` deve ser alcançável pelo celular (`localhost` no celular aponta para o próprio dispositivo).
-- Confirme firewall, Wi-Fi e permissões de comunicação em rede.
+## 5. Configurar e executar o Backend BFF (`server/`)
 
-## 5. Executar o app
+1. Instale as dependências do servidor e crie o arquivo de ambiente:
 
-Com o backend em execução, na raiz:
+   ```bash
+   cd server
+   npm ci
+   cp .env.example .env
+   ```
 
-```bash
-npx expo start --dev-client
-```
+2. Preencha `server/.env`:
 
-Para criar/executar um build nativo Android local com o ambiente configurado:
+   | Variável | Finalidade |
+   | --- | --- |
+   | `PORT` | Porta HTTP do BFF (padrão `3333`). |
+   | `CALENDLY_API_BASE_URL` | Base da API (`https://api.calendly.com`). |
+   | `CALENDLY_API_TOKEN` | **Token privado** do Calendly (exclusivo do servidor). |
+   | `CALENDLY_TIMEOUT_MS` | Timeout das requisições ao Calendly (ex.: `10000`). |
+   | `ALLOWED_EVENT_TYPE_URIS` | URIs dos Event Types permitidos, separadas por vírgula; obrigatório em `NODE_ENV=production`. |
+   | `GOOGLE_CLIENT_IDS` | Web Client ID(s) do Google aceitos na verificação do ID Token. |
+   | `CORS_ALLOWED_ORIGINS` | Origens permitidas para clientes web (ex.: `http://localhost:8081`). |
 
-```bash
-npm run android
-```
+   > **Segurança:** nunca compartilhe tokens reais nem adicione `CALENDLY_API_TOKEN` no código ou `.env` do aplicativo mobile.
 
-O Google Sign-In requer configuração correta do projeto OAuth para o pacote Android (`com.oriently.app`) e as credenciais/assinaturas utilizadas no build.
+3. Compile e inicie o servidor:
 
-## 6. Validar a integração
+   ```bash
+   npm run build
+   npm start
+   ```
 
-Faça a verificação nesta ordem:
+4. Confirme que o healthcheck responde (`http://localhost:3333/health`):
 
-1. Inicie o BFF e confirme `/health`.
-2. Entre com Google no aplicativo.
-3. Abra o agendamento e confira os tipos de evento e horários disponíveis.
-4. Faça uma reserva de teste com dados que você controla.
-5. Confirme o evento na Home, Agenda e Detalhes.
-6. Abra o link da videoconferência **somente quando o Calendly fornecer um link válido**.
-7. Teste o cancelamento de uma reunião de teste e confira o resultado no Calendly.
-8. Verifique os comportamentos de falha de rede e sessão expirada.
+   ```json
+   {"ok":true,"service":"oriently-bff"}
+   ```
 
-Não utilize eventos de terceiros para testes de cancelamento.
+---
 
-## 7. Testes automatizados
+## 6. Configurar e executar o App Mobile (Modo Real)
 
-### Aplicativo
+1. Na raiz do projeto, crie o `.env`:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Preencha as variáveis:
+
+   | Variável | Finalidade |
+   | --- | --- |
+   | `EXPO_PUBLIC_BACKEND_URL` | Endereço do BFF acessível pelo aparelho (`http://SEU_IP_LOCAL:3333` via Wi-Fi ou `http://localhost:3333` usando `adb reverse tcp:3333 tcp:3333`). |
+   | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Mesmo **Web Client ID** configurado no Google Cloud e em `GOOGLE_CLIENT_IDS`. |
+
+3. Inicie o aplicativo no Development Build:
+
+   ```bash
+   npx expo start --dev-client
+   ```
+
+   *(Ou execute `npx expo run:android` caso ainda não tenha compilado o build nativo no aparelho.)*
+
+---
+
+## 7. Testes automatizados e limites de verificação
+
+### Comandos
+
+**Mobile (na raiz):**
 
 ```bash
 npm run typecheck
 npm test
 ```
 
-O script `npm test` compila os testes via `tsconfig.test.json` e executa o Node.js Test Runner em `.test-dist/services/__tests__/`.
-
-### Servidor
+**Backend (em `server/`):**
 
 ```bash
 cd server
@@ -163,41 +184,26 @@ npm run typecheck
 npm test
 ```
 
-O script de testes do servidor compila TypeScript e executa os testes de `dist/__tests__/`.
+### Etapas não verificadas automaticamente
+
+Os testes automatizados cobrem a lógica de cliente (`apiClient`, `bookingService`, `demoData`, `meetingLinks`) e rotas/middlewares do BFF com **mocks**. As etapas abaixo dependem de ambiente externo e exigem validação manual no aparelho:
+
+- Fluxo interativo completo do **Google Sign-In** com OAuth real e SHA-1 registrado no Google Cloud Console.
+- Consultas, reservas e cancelamentos reais contra a API externa do **Calendly** com token de produção.
+- Compatibilidade do **Expo Go** (não suportado devido ao módulo nativo `@react-native-google-signin/google-signin`).
+
+---
 
 ## 8. Captura de telas para documentação
 
-Com um aparelho Android conectado via ADB, execute o script interativo na raiz do repositório para gerar as imagens em `docs/images/`:
+Com um aparelho Android conectado via ADB, execute na raiz:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\capture-screenshots.ps1
 ```
 
-Também é possível capturar apenas uma tela específica (`login`, `home`, `agendar`, `agenda` ou `detalhes`):
+Ou capture uma tela específica (`login`, `home`, `agendar`, `agenda` ou `detalhes`):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\capture-screenshots.ps1 -Screen home
 ```
-
-## 9. Problemas frequentes
-
-| Sintoma | O que verificar |
-| --- | --- |
-| O app não alcança o backend | IP, porta, firewall, `adb reverse` e `EXPO_PUBLIC_BACKEND_URL`. |
-| Login Google falha | Web Client ID, configuração OAuth, pacote Android e assinatura do build. |
-| Erro de autenticação no BFF | Se o ID Token está sendo enviado e se o client ID consta em `GOOGLE_CLIENT_IDS`. |
-| Nenhum horário aparece | Disponibilidade Calendly, tipo de evento e `ALLOWED_EVENT_TYPE_URIS`. |
-| Erro ao criar reunião | Permissões do token Calendly e disponibilidade real do horário. |
-| O link de sala não aparece | Verifique se o evento tem `location.join_url` válido; o link de evento Calendly não substitui o de reunião. |
-| Tentativa de reserva com resultado incerto | Confira primeiro sua agenda antes de tentar novamente, para reduzir risco de duplicidade. |
-
-## 10. Segurança antes de publicar
-
-- Verifique se nenhum `.env` ou token está versionado, inclusive em commits antigos.
-- Se uma credencial real já foi exposta no histórico, **revogue/rotacione** essa credencial.
-- Mantenha `ALLOWED_EVENT_TYPE_URIS` preenchida em produção.
-- Não use credenciais privadas nem uma conta real compartilhada para o modo demo.
-
-## 11. Modo demonstração
-
-O modo demonstração (**"Explorar modo demo"**) funciona offline com dados fictícios em memória (`src/services/demoData.ts`), permitindo navegar por Home, Agendamento, Agenda e Detalhes sem chamar o BFF nem alterar dados reais no Calendly. Utilize o login Google para validar a integração real com Calendly.

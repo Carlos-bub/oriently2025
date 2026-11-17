@@ -95,40 +95,24 @@ Detalhes e limitações dessa estrutura estão em [docs/ARCHITECTURE.md](docs/AR
 
 ## Como executar
 
-**Pré-requisitos:** Node.js e npm compatíveis com as dependências do projeto; ambiente Expo configurado; credenciais OAuth do Google; token e tipos de evento do Calendly habilitados para as operações utilizadas.
+> O aplicativo utiliza `@react-native-google-signin/google-signin` e requer um **Development Build** Android (`npx expo run:android`), não sendo compatível com o Expo Go.
 
-1. Clone o repositório:
+### Início rápido (Modo demonstração)
 
-   ```bash
-   git clone https://github.com/Carlos-bub/oriently2025.git
-   cd oriently2025
-   ```
+Funciona offline, sem backend e sem credenciais Google/Calendly:
 
-2. Configure e execute o backend em um terminal:
+```bash
+git clone https://github.com/Carlos-bub/oriently2025.git
+cd oriently2025
+npm ci
+npx expo run:android
+```
 
-   ```bash
-   cd server
-   npm ci
-   cp .env.example .env
-   # Preencha as variáveis necessárias em server/.env
-   npm run build
-   npm start
-   ```
+Na tela de login, toque em **"Explorar modo demo"**.
 
-3. Em outro terminal, na raiz do projeto, configure e execute o aplicativo:
+### Modo completo (Google + Calendly + BFF)
 
-   ```bash
-   npm ci
-   cp .env.example .env
-   # Informe a URL alcançável do BFF e o Google Web Client ID
-   npx expo start --dev-client
-   ```
-
-> O projeto utiliza `@react-native-google-signin/google-signin` e **requer um build de desenvolvimento nativo compatível**. Para rodar no Android com o ambiente nativo configurado, utilize `npm run android`.
->
-> Em um celular físico, `EXPO_PUBLIC_BACKEND_URL` deve apontar para um servidor acessível pelo dispositivo (`adb reverse tcp:3333 tcp:3333` ou IP da rede local).
-
-Consulte o guia completo de variáveis, permissões, captura de telas e comandos em [docs/SETUP.md](docs/SETUP.md).
+Consulte o passo a passo completo — incluindo Node.js, PowerShell, Google OAuth, SHA-1 Android, variáveis `.env` e execução do servidor `server/` — em [docs/SETUP.md](docs/SETUP.md).
 
 ## Testes
 
