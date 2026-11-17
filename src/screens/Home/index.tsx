@@ -14,6 +14,10 @@ import {
   getPastAndMissedEvents,
 } from "../../services/calendlyService";
 import { CalendlyEvent } from "../../services/types";
+import {
+  getValidVideoJoinUrl,
+  getMeetingLocationLabel,
+} from "../../utils/meetingLinks";
 
 import {
   Container,
@@ -265,21 +269,9 @@ export function Home() {
     };
   };
 
-  const getMeetingLocationLabel = (event: CalendlyEvent): string | null => {
-    if (!event.location) return null;
-    if (event.location.location) return event.location.location;
-    if (event.location.type === "google_conference") return "Google Meet";
-    if (event.location.type === "zoom") return "Zoom";
-    if (event.location.type === "microsoft_teams_conference") {
-      return "Microsoft Teams";
-    }
-    if (event.location.join_url) return "Videoconferência";
-    return null;
-  };
-
-  const handleOpenJoinUrl = async (joinUrl?: string) => {
-    if (!joinUrl || !joinUrl.startsWith("https://")) {
-      navigation.navigate("Profile");
+  const handleOpenJoinUrl = async (joinUrl: string | null) => {
+    if (!joinUrl) {
+      navigation.navigate("MeetingDetails", { event: nextMeeting });
       return;
     }
 
@@ -288,10 +280,10 @@ export function Home() {
       if (supported) {
         await Linking.openURL(joinUrl);
       } else {
-        navigation.navigate("Profile");
+        navigation.navigate("MeetingDetails", { event: nextMeeting });
       }
     } catch {
-      navigation.navigate("Profile");
+      navigation.navigate("MeetingDetails", { event: nextMeeting });
     }
   };
 
@@ -382,10 +374,8 @@ export function Home() {
       nextMeeting.start_time,
       nextMeeting.end_time
     );
-    const hasJoinUrl = Boolean(
-      nextMeeting.location?.join_url &&
-        nextMeeting.location.join_url.startsWith("https://")
-    );
+    const validJoinUrl = getValidVideoJoinUrl(nextMeeting);
+    const hasJoinUrl = Boolean(validJoinUrl);
 
     return (
       <TimelineRow>
@@ -442,9 +432,9 @@ export function Home() {
 
             <JoinRoomButton
               activeOpacity={0.85}
-              onPress={() => handleOpenJoinUrl(nextMeeting.location?.join_url)}
+              onPress={() => handleOpenJoinUrl(validJoinUrl)}
               accessibilityRole="button"
-              accessibilityLabel={hasJoinUrl ? "Acessar sala" : "Ver agenda"}
+              accessibilityLabel={hasJoinUrl ? "Acessar sala" : "Ver detalhes"}
             >
               <JoinRoomButtonText>
                 {hasJoinUrl ? "Acessar sala" : "Ver detalhes"}

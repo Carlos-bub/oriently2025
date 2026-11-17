@@ -81,7 +81,10 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
           accessibilityRole="button"
           accessibilityLabel="Agenda"
           accessibilityState={{ selected: activeRoute?.name === "Profile" }}
-          style={styles.sideTab}
+          style={[
+            styles.sideTab,
+            activeRoute?.name === "Profile" && styles.sideTabActive,
+          ]}
         >
           <Feather
             name="calendar"
@@ -177,11 +180,16 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   sideTab: {
-    minWidth: 64,
-    height: 48,
+    minWidth: 68,
+    height: 46,
+    paddingHorizontal: 12,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
     gap: 2,
+  },
+  sideTabActive: {
+    backgroundColor: "#e9edff",
   },
   sideLabel: {
     fontSize: 11,

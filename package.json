@@ -9,7 +9,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "tsc -p tsconfig.test.json && node --test .test-dist/__tests__/*.test.js"
+    "test": "tsc -p tsconfig.test.json && node --test .test-dist/services/__tests__/*.test.js"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",

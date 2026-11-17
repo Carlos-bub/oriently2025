@@ -21,14 +21,15 @@ import { getFriendlyApiErrorMessage } from "../../services/apiClient";
 import {
   getUserInfo,
   getPastAndMissedEvents,
-  cancelEvent,
-  getEventInvitees,
   clearInviteesCache,
 } from "../../services/calendlyService";
 import { CalendlyEvent } from "../../services/types";
 import { useAuth } from "../../contexts/AuthContext";
-import { useDialog } from "../../contexts/DialogContext";
 import { OrientlyTopBar } from "../../components/OrientlyTopBar";
+import {
+  getValidVideoJoinUrl,
+  getMeetingLocationLabel,
+} from "../../utils/meetingLinks";
 import {
   Container,
   Header,
@@ -101,15 +102,12 @@ export function Profile() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { showDialog } = useDialog();
 
   const [activeTab, setActiveTab] = useState<FilterTab>("upcoming");
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [cancelingUri, setCancelingUri] = useState<string | null>(null);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [partialWarning, setPartialWarning] = useState<string | null>(null);
-  const pendingExternalRefreshRef = useRef(false);
 
   const [events, setEvents] = useState<{
     activeEvents: CalendlyEvent[];
@@ -190,157 +188,6 @@ export function Profile() {
     }, [loadEvents])
   );
 
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active" && pendingExternalRefreshRef.current) {
-        pendingExternalRefreshRef.current = false;
-        loadEvents(true);
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, [loadEvents]);
-
-  const handleCancelEvent = async (event: CalendlyEvent) => {
-    try {
-      const invitees =
-        event.invitees && event.invitees.length > 0
-          ? event.invitees
-          : await getEventInvitees(event.uri);
-
-      const isUserEvent = invitees.some(
-        (invitee) =>
-          invitee.email &&
-          invitee.email.toLowerCase() === user?.email?.toLowerCase()
-      );
-
-      if (!isUserEvent) {
-        showDialog({
-          variant: "danger",
-          title: "Sem permissão",
-          message: "Você não tem permissão para cancelar este evento.",
-        });
-        return;
-      }
-
-      const eventDateFormatted = new Date(event.start_time).toLocaleDateString(
-        "pt-BR"
-      );
-      const eventTimeFormatted = formatTimeAndDuration(
-        event.start_time,
-        event.end_time
-      );
-
-      showDialog({
-        variant: "danger",
-        title: "Cancelar reunião",
-        message: "Tem certeza que deseja cancelar esta orientação?",
-        details: {
-          title: event.name,
-          date: eventDateFormatted,
-          time: eventTimeFormatted,
-        },
-        actions: [
-          {
-            label: "Manter",
-            tone: "secondary",
-          },
-          {
-            label: "Confirmar cancelamento",
-            tone: "danger",
-            onPress: async () => {
-              setCancelingUri(event.uri);
-              try {
-                const result = await cancelEvent(event.uri);
-                if (result.success) {
-                  await loadEvents(true);
-                  showDialog({
-                    variant: "success",
-                    title: "Reunião cancelada",
-                    message: "Sua orientação foi cancelada com sucesso.",
-                  });
-                } else if (
-                  result.code === "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED"
-                ) {
-                  const message =
-                    result.error ||
-                    "Esta é uma reunião compartilhada. Cancele apenas a sua participação pelo link individual.";
-
-                  if (result.cancelUrl) {
-                    const cancelUrl = result.cancelUrl;
-                    showDialog({
-                      variant: "warning",
-                      title: "Reunião compartilhada",
-                      message,
-                      details: {
-                        title: event.name,
-                        date: eventDateFormatted,
-                        time: eventTimeFormatted,
-                      },
-                      actions: [
-                        { label: "Fechar", tone: "secondary" },
-                        {
-                          label: "Cancelar minha participação",
-                          tone: "primary",
-                          onPress: async () => {
-                            try {
-                              pendingExternalRefreshRef.current = true;
-                              await Linking.openURL(cancelUrl);
-                            } catch {
-                              pendingExternalRefreshRef.current = false;
-                              showDialog({
-                                variant: "danger",
-                                title: "Erro",
-                                message:
-                                  "Não foi possível abrir o link de cancelamento.",
-                              });
-                            }
-                          },
-                        },
-                      ],
-                    });
-                  } else {
-                    showDialog({
-                      variant: "warning",
-                      title: "Reunião compartilhada",
-                      message,
-                    });
-                  }
-                } else {
-                  showDialog({
-                    variant: "danger",
-                    title: "Erro",
-                    message:
-                      result.error || "Não foi possível cancelar a reunião.",
-                  });
-                }
-              } catch (error) {
-                console.error("Erro ao cancelar evento:", error);
-                showDialog({
-                  variant: "danger",
-                  title: "Erro",
-                  message: "Não foi possível cancelar a reunião.",
-                });
-              } finally {
-                setCancelingUri(null);
-              }
-            },
-          },
-        ],
-      });
-    } catch (error) {
-      console.error("Erro ao verificar participantes do evento:", error);
-      showDialog({
-        variant: "danger",
-        title: "Erro",
-        message:
-          "Não foi possível verificar se você tem permissão para cancelar este evento.",
-      });
-    }
-  };
-
   const getHighlightedDate = (isoString: string) => {
     const date = new Date(isoString);
     const day = String(date.getDate()).padStart(2, "0");
@@ -395,30 +242,6 @@ export function Profile() {
       : `${start} – ${end}`;
   };
 
-  const getMeetingLocationLabel = (event: CalendlyEvent): string | null => {
-    if (!event.location) return null;
-    if (event.location.location) return event.location.location;
-    if (event.location.type === "google_conference") return "Google Meet";
-    if (event.location.type === "zoom") return "Zoom";
-    if (event.location.type === "microsoft_teams_conference") {
-      return "Microsoft Teams";
-    }
-    if (event.location.join_url) return "Videoconferência";
-    return null;
-  };
-
-  const handleOpenJoinUrl = async (joinUrl?: string) => {
-    if (!joinUrl || !joinUrl.startsWith("https://")) return;
-    try {
-      const supported = await Linking.canOpenURL(joinUrl);
-      if (supported) {
-        await Linking.openURL(joinUrl);
-      }
-    } catch {
-      // ignora silenciosamente se não puder abrir URL externa
-    }
-  };
-
   const firstUpcomingUri = events.activeEvents[0]?.uri;
 
   const renderEventItem = ({ item }: { item: CalendlyEvent }) => {
@@ -444,12 +267,7 @@ export function Profile() {
     const isSpotlight = isUpcoming && item.uri === firstUpcomingUri;
     const { day, month } = getHighlightedDate(item.start_time);
     const locationLabel = getMeetingLocationLabel(item);
-    const isThisCanceling = cancelingUri === item.uri;
-    const hasJoinUrl = Boolean(
-      isUpcoming &&
-        item.location?.join_url &&
-        item.location.join_url.startsWith("https://")
-    );
+    const hasJoinUrl = Boolean(isUpcoming && getValidVideoJoinUrl(item));
 
     return (
       <ScheduleCard
@@ -478,23 +296,7 @@ export function Profile() {
               </CountdownPill>
             </SpotlightBadgesLeft>
 
-            <CompactCancelButton
-              activeOpacity={0.75}
-              onPress={() => handleCancelEvent(item)}
-              disabled={cancelingUri !== null}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel={`Cancelar reunião ${item.name}`}
-            >
-              {isThisCanceling ? (
-                <ActivityIndicator size="small" color="#64748b" />
-              ) : (
-                <>
-                  <Feather name="x" size={12} color="#64748b" />
-                  <CompactCancelText>Cancelar</CompactCancelText>
-                </>
-              )}
-            </CompactCancelButton>
+            <Feather name="chevron-right" size={16} color="#005bb1" />
           </SpotlightHeaderRow>
         )}
 
@@ -516,25 +318,7 @@ export function Profile() {
                   </StatusBadgeText>
                 </StatusBadge>
 
-                {isUpcoming && (
-                  <CompactCancelButton
-                    activeOpacity={0.75}
-                    onPress={() => handleCancelEvent(item)}
-                    disabled={cancelingUri !== null}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Cancelar reunião ${item.name}`}
-                  >
-                    {isThisCanceling ? (
-                      <ActivityIndicator size="small" color="#64748b" />
-                    ) : (
-                      <>
-                        <Feather name="x" size={12} color="#64748b" />
-                        <CompactCancelText>Cancelar</CompactCancelText>
-                      </>
-                    )}
-                  </CompactCancelButton>
-                )}
+                <Feather name="chevron-right" size={15} color="#64748b" />
               </CardHeaderInline>
             )}
 
@@ -570,20 +354,14 @@ export function Profile() {
           </CardDetailsCol>
         </CardRow>
 
-        {isSpotlight && hasJoinUrl && (
+        {isSpotlight && (
           <CardFooterBar>
             <CardFooterLabel numberOfLines={1}>
-              {locationLabel || "Sala online disponível"}
+              {hasJoinUrl
+                ? "Sala online e ações disponíveis nos detalhes"
+                : "Toque para ver detalhes e gerenciar"}
             </CardFooterLabel>
-            <JoinRoomPill
-              activeOpacity={0.85}
-              onPress={() => handleOpenJoinUrl(item.location?.join_url)}
-              accessibilityRole="button"
-              accessibilityLabel="Acessar sala da reunião"
-            >
-              <JoinRoomPillText>Acessar sala</JoinRoomPillText>
-              <Feather name="external-link" size={12} color="#FFFFFF" />
-            </JoinRoomPill>
+            <Feather name="arrow-right" size={14} color="#005bb1" />
           </CardFooterBar>
         )}
       </ScheduleCard>
@@ -735,7 +513,7 @@ export function Profile() {
         ItemSeparatorComponent={() => <Divider />}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingBottom: Math.max(insets.bottom, 16) + 96,
+          paddingBottom: Math.max(insets.bottom, 16) + 108,
           flexGrow: isCurrentTabEmpty ? 1 : 0,
         }}
         stickySectionHeadersEnabled={false}

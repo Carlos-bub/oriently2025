@@ -310,6 +310,13 @@ export const SectionTitle = styled.Text`
   color: #0f1b32;
 `;
 
+export const SectionDisclaimer = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtituloslight};
+  font-size: 12px;
+  color: #64748b;
+  margin-top: -10px;
+`;
+
 export const ChecklistCard = styled.View`
   background-color: #ffffff;
   border-radius: 20px;

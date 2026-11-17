@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "CommonJS",
     "moduleResolution": "Node",
-    "rootDir": "src/services",
+    "rootDir": "src",
     "outDir": ".test-dist",
     "strict": true,
     "esModuleInterop": true,
@@ -13,7 +13,9 @@
     "src/services/apiClient.ts",
     "src/services/bookingService.ts",
     "src/services/types.ts",
+    "src/utils/meetingLinks.ts",
     "src/services/__tests__/apiClient.test.ts",
-    "src/services/__tests__/bookingService.test.ts"
+    "src/services/__tests__/bookingService.test.ts",
+    "src/services/__tests__/meetingLinks.test.ts"
   ]
 }

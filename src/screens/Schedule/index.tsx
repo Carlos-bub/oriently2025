@@ -457,8 +457,10 @@ export function Schedule() {
       </Header>
 
       <ScrollBody
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
-          paddingBottom: Math.max(insets.bottom, 16) + 96,
+          paddingBottom: Math.max(insets.bottom, 16) + 112,
         }}
       >
         <ContentWrapper>

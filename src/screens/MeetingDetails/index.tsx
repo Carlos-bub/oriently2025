@@ -9,8 +9,14 @@ import { useDialog } from "../../contexts/DialogContext";
 import {
   cancelEvent,
   getEventInvitees,
+  clearInviteesCache,
 } from "../../services/calendlyService";
 import { CalendlyEvent } from "../../services/types";
+import {
+  getValidVideoJoinUrl,
+  getMeetingLocationLabel,
+  getValidCalendlyActionUrl,
+} from "../../utils/meetingLinks";
 
 import {
   Container,
@@ -53,6 +59,7 @@ import {
   SectionHeaderRow,
   SectionDot,
   SectionTitle,
+  SectionDisclaimer,
   ChecklistCard,
   ChecklistItem,
   CheckboxBox,
@@ -64,8 +71,6 @@ import {
   CoachTipTitle,
   CoachTipBody,
   BottomActions,
-  RescheduleButton,
-  RescheduleButtonText,
   CancelButton,
   CancelButtonText,
   CancelReasonBox,
@@ -196,21 +201,10 @@ export function MeetingDetails() {
   };
 
   const getLocationLabel = (): string => {
-    if (!event.location) return "Orientação";
-    if (event.location.location) return event.location.location;
-    if (event.location.type === "google_conference") return "Google Meet";
-    if (event.location.type === "zoom") return "Zoom";
-    if (event.location.type === "microsoft_teams_conference") {
-      return "Microsoft Teams";
-    }
-    if (event.location.join_url) return "Videoconferência";
-    return "Orientação";
+    return getMeetingLocationLabel(event) || "Orientação";
   };
 
-  const joinUrl =
-    event.location?.join_url && event.location.join_url.startsWith("https://")
-      ? event.location.join_url
-      : null;
+  const joinUrl = getValidVideoJoinUrl(event);
 
   const displayJoinUrl = joinUrl
     ? joinUrl.replace(/^https?:\/\//, "")
@@ -315,6 +309,7 @@ export function MeetingDetails() {
               try {
                 const result = await cancelEvent(event.uri);
                 if (result.success) {
+                  clearInviteesCache();
                   showDialog({
                     variant: "success",
                     title: "Reunião cancelada",
@@ -328,8 +323,10 @@ export function MeetingDetails() {
                     result.error ||
                     "Esta é uma reunião compartilhada. Cancele apenas a sua participação pelo link individual.";
 
-                  if (result.cancelUrl) {
-                    const cancelUrl = result.cancelUrl;
+                  const safeCancelUrl = getValidCalendlyActionUrl(
+                    result.cancelUrl
+                  );
+                  if (safeCancelUrl) {
                     showDialog({
                       variant: "warning",
                       title: "Reunião compartilhada",
@@ -345,7 +342,7 @@ export function MeetingDetails() {
                           label: "Cancelar minha participação",
                           tone: "primary",
                           onPress: async () => {
-                            await Linking.openURL(cancelUrl);
+                            await Linking.openURL(safeCancelUrl);
                           },
                         },
                       ],
@@ -520,13 +517,15 @@ export function MeetingDetails() {
 
                 <SecondaryActionPill
                   activeOpacity={0.84}
-                  onPress={() => navigation.navigate("MainTabs", { screen: "Schedule" })}
+                  onPress={() =>
+                    navigation.navigate("MainTabs", { screen: "Schedule" })
+                  }
                   accessibilityRole="button"
                   accessibilityLabel="Agendar outra orientação"
                 >
                   <Feather name="calendar" size={16} color="#005bb1" />
                   <SecondaryActionPillText>
-                    Agendar novo horário
+                    Agendar outra orientação
                   </SecondaryActionPillText>
                 </SecondaryActionPill>
               </>
@@ -535,8 +534,11 @@ export function MeetingDetails() {
 
           <SectionHeaderRow>
             <SectionDot color="#6a8dff" />
-            <SectionTitle>Pauta do encontro</SectionTitle>
+            <SectionTitle>Checklist de preparação</SectionTitle>
           </SectionHeaderRow>
+          <SectionDisclaimer>
+            Sugestões gerais para o encontro (alterações não são salvas)
+          </SectionDisclaimer>
 
           <ChecklistCard>
             {agendaItems.map((item) => (
@@ -583,18 +585,6 @@ export function MeetingDetails() {
 
           {isUpcoming && (
             <BottomActions>
-              <RescheduleButton
-                activeOpacity={0.8}
-                onPress={() =>
-                  navigation.navigate("MainTabs", { screen: "Schedule" })
-                }
-                accessibilityRole="button"
-                accessibilityLabel="Reagendar horário"
-              >
-                <Feather name="calendar" size={16} color="#005bb1" />
-                <RescheduleButtonText>Reagendar horário</RescheduleButtonText>
-              </RescheduleButton>
-
               <CancelButton
                 activeOpacity={0.8}
                 disabled={canceling}
