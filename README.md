@@ -165,10 +165,9 @@ oriently2025/
 
 ## Limitações e próximos passos
 
-- Completar a galeria de capturas de todas as telas em `docs/images/` usando `./scripts/capture-screenshots.ps1`.
-- Configurar integração contínua para executar automaticamente verificações e testes em Pull Requests.
-- A persistência atual de idempotência é baseada em arquivo local e se destina a uma implantação de instância única; para múltiplas réplicas, seria necessário armazenamento compartilhado.
-- A disponibilidade de links de videochamada e ações individuais depende dos dados efetivamente retornados pelo Calendly.
+- A persistência atual de idempotência é baseada em arquivo local (`server/.data/idempotency.json`) e se destina a implantação de instância única; para múltiplas réplicas, será necessário armazenamento compartilhado (ex.: Redis ou banco de dados).
+- A disponibilidade de links de videochamada (`join_url`) e URLs individuais de cancelamento/reagendamento depende dos dados efetivamente retornados pelo Calendly para cada evento.
+- Os testes automatizados atuais utilizam mocks para serviços externos; fluxos E2E com OAuth e Calendly reais continuam dependentes de validação manual em dispositivo.
 
 ## Autoria
 
