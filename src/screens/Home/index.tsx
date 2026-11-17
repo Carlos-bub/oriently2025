@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from "react";
-import { ActivityIndicator, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Linking, useWindowDimensions } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "styled-components/native";
 
 import { useAuth } from "../../contexts/AuthContext";
@@ -13,72 +13,79 @@ import {
   getPastAndMissedEvents,
 } from "../../services/calendlyService";
 import { CalendlyEvent } from "../../services/types";
-import {
-  AcademicBadge,
-  BrandMark,
-  EditorialDateBlock,
-  JourneyCheckpoint,
-} from "../../components/AcademicFlow";
 
 import {
   Container,
   Header,
   HeaderRow,
-  HeaderBrandBlock,
-  HeaderDateText,
+  HeaderBrandRow,
+  HeaderBrandBadge,
+  HeaderBrandTitle,
   HeaderActions,
   AvatarWrapper,
   UserPhoto,
   UserAvatarFallback,
   UserIcon,
-  AvatarStatusDot,
   LogoutButton,
   LogoutIcon,
   ScrollContent,
   Body,
   WelcomeSection,
-  GreetingEyebrow,
+  DatePill,
+  DatePillText,
   GreetingTitle,
   WelcomeDescription,
   HeroScheduleCard,
+  HeroGlowTopRight,
+  HeroGlowBottomRight,
+  HeroStepPill,
+  HeroStepPillText,
+  HeroMiddleRow,
   HeroTextColumn,
   HeroTitle,
   HeroDescription,
+  HeroIllustrationBox,
+  HeroCalendarTile,
+  HeroCompassCorner,
+  HeroDurationCorner,
+  HeroDurationCornerText,
   HeroActionPill,
   HeroActionPillText,
-  HeroIllustrationBox,
-  HeroTrajectoryArc,
-  HeroOrbitDotTop,
-  HeroOrbitDotBottom,
-  MiniCalendarFrame,
-  MiniCalendarTopBar,
-  MiniCalendarRing,
-  MiniCalendarBody,
-  MiniCalendarLineShort,
-  MiniCalendarLineLong,
-  MiniCompassBadge,
   SecondaryAgendaCard,
+  SecondaryLeftRow,
   SecondaryIconBox,
   SecondaryTextCol,
   SecondaryTitle,
   SecondaryDescription,
+  SecondaryChevronCircle,
   SectionHeaderRow,
   SectionTitleGroup,
-  SectionDot,
   SectionTitle,
   SectionLinkButton,
   SectionLinkText,
   TimelineRow,
+  TimelineVerticalLine,
+  TimelineDotOuter,
+  TimelineDotInner,
   MeetingCard,
-  MeetingTopRow,
-  MeetingInfoCol,
+  MeetingStatusRow,
   StatusBadge,
   StatusDot,
   StatusBadgeText,
+  MeetingContextLabel,
   MeetingTitle,
-  MeetingMetaList,
-  MeetingMetaItem,
-  MeetingMetaText,
+  MeetingScheduleRow,
+  MeetingScheduleText,
+  DurationChip,
+  DurationChipText,
+  ModalityBox,
+  ModalityLeft,
+  ModalityIconBox,
+  ModalityLabel,
+  JoinRoomButton,
+  JoinRoomButtonText,
+  PartialWarningRow,
+  PartialWarningText,
   StateCard,
   EmptyIllustrationRow,
   EmptyAcademicGraphic,
@@ -94,6 +101,11 @@ import {
   CenteredStateText,
   RetryButton,
   RetryButtonText,
+  TipCard,
+  TipIconBox,
+  TipTextCol,
+  TipEyebrow,
+  TipBody,
 } from "./styles";
 
 export function Home() {
@@ -198,28 +210,45 @@ export function Home() {
     }
   };
 
-  const getHighlightedDate = (isoString: string) => {
-    const date = new Date(isoString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = date
-      .toLocaleDateString("pt-BR", { month: "short" })
-      .replace(".", "")
-      .toUpperCase();
-    return { day, month };
+  const getRelativeCountdownLabel = (isoString: string) => {
+    const start = new Date(isoString);
+    const now = new Date();
+    const startDay = new Date(
+      start.getFullYear(),
+      start.getMonth(),
+      start.getDate()
+    );
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffDays = Math.round(
+      (startDay.getTime() - today.getTime()) / 86400000
+    );
+
+    if (diffDays <= 0) return "Confirmada • Hoje";
+    if (diffDays === 1) return "Confirmada • Amanhã";
+    return `Confirmada • Em ${diffDays} dias`;
   };
 
-  const formatTimeAndDuration = (startIso: string, endIso?: string) => {
+  const formatScheduleSummary = (startIso: string, endIso?: string) => {
     const startDate = new Date(startIso);
-    const start = startDate.toLocaleTimeString("pt-BR", {
+    const datePart = startDate.toLocaleDateString("pt-BR", {
+      day: "numeric",
+      month: "long",
+    });
+    const startTime = startDate.toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
     });
 
-    if (!endIso) return start;
+    if (!endIso) {
+      return {
+        scheduleLabel: `${datePart} • ${startTime}`,
+        durationLabel: null as string | null,
+      };
+    }
 
     const endDate = new Date(endIso);
-    const end = endDate.toLocaleTimeString("pt-BR", {
+    const endTime = endDate.toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -229,9 +258,10 @@ export function Home() {
       (endDate.getTime() - startDate.getTime()) / 60000
     );
 
-    return durationMin > 0
-      ? `${start} – ${end} (${durationMin} min)`
-      : `${start} – ${end}`;
+    return {
+      scheduleLabel: `${datePart} • ${startTime} – ${endTime}`,
+      durationLabel: durationMin > 0 ? `${durationMin} min` : null,
+    };
   };
 
   const getMeetingLocationLabel = (event: CalendlyEvent): string | null => {
@@ -244,6 +274,24 @@ export function Home() {
     }
     if (event.location.join_url) return "Videoconferência";
     return null;
+  };
+
+  const handleOpenJoinUrl = async (joinUrl?: string) => {
+    if (!joinUrl || !joinUrl.startsWith("https://")) {
+      navigation.navigate("Profile");
+      return;
+    }
+
+    try {
+      const supported = await Linking.canOpenURL(joinUrl);
+      if (supported) {
+        await Linking.openURL(joinUrl);
+      } else {
+        navigation.navigate("Profile");
+      }
+    } catch {
+      navigation.navigate("Profile");
+    }
   };
 
   const renderNextOrientationSection = () => {
@@ -284,7 +332,11 @@ export function Home() {
     if (!nextMeeting) {
       return (
         <TimelineRow>
-          <JourneyCheckpoint waiting />
+          <TimelineVerticalLine />
+          <TimelineDotOuter waiting>
+            <TimelineDotInner />
+          </TimelineDotOuter>
+
           <StateCard>
             <EmptyIllustrationRow>
               <EmptyAcademicGraphic>
@@ -317,23 +369,29 @@ export function Home() {
               accessibilityHint="Abre a tela para agendar uma reunião"
             >
               <EmptyFooterText>Agendar agora</EmptyFooterText>
-              <Feather
-                name="arrow-right"
-                size={15}
-                color={theme.colors.editorial_navy}
-              />
+              <Feather name="arrow-right" size={15} color="#005bb1" />
             </EmptyFooterAction>
           </StateCard>
         </TimelineRow>
       );
     }
 
-    const { day, month } = getHighlightedDate(nextMeeting.start_time);
     const locationLabel = getMeetingLocationLabel(nextMeeting);
+    const { scheduleLabel, durationLabel } = formatScheduleSummary(
+      nextMeeting.start_time,
+      nextMeeting.end_time
+    );
+    const hasJoinUrl = Boolean(
+      nextMeeting.location?.join_url &&
+        nextMeeting.location.join_url.startsWith("https://")
+    );
 
     return (
       <TimelineRow>
-        <JourneyCheckpoint />
+        <TimelineVerticalLine />
+        <TimelineDotOuter>
+          <TimelineDotInner />
+        </TimelineDotOuter>
 
         <MeetingCard
           activeOpacity={0.85}
@@ -342,60 +400,72 @@ export function Home() {
           accessibilityLabel={`Próxima orientação: ${nextMeeting.name}`}
           accessibilityHint="Toque para abrir os detalhes na sua agenda"
         >
-          <MeetingTopRow>
-            <EditorialDateBlock day={day} month={month} />
+          <MeetingStatusRow>
+            <StatusBadge>
+              <StatusDot />
+              <StatusBadgeText>
+                {getRelativeCountdownLabel(nextMeeting.start_time)}
+              </StatusBadgeText>
+            </StatusBadge>
 
-            <MeetingInfoCol>
-              <StatusBadge>
-                <StatusDot />
-                <StatusBadgeText>Confirmada</StatusBadgeText>
-              </StatusBadge>
+            <MeetingContextLabel>TCC • Orientação</MeetingContextLabel>
+          </MeetingStatusRow>
 
-              <MeetingTitle numberOfLines={2}>{nextMeeting.name}</MeetingTitle>
+          <MeetingTitle numberOfLines={2}>{nextMeeting.name}</MeetingTitle>
 
-              <MeetingMetaList>
-                <MeetingMetaItem>
-                  <Feather
-                    name="clock"
-                    size={12}
-                    color={theme.colors.editorial_muted}
-                  />
-                  <MeetingMetaText>
-                    {formatTimeAndDuration(
-                      nextMeeting.start_time,
-                      nextMeeting.end_time
-                    )}
-                  </MeetingMetaText>
-                </MeetingMetaItem>
+          <MeetingScheduleRow>
+            <Feather name="clock" size={14} color="#005bb1" />
+            <MeetingScheduleText>{scheduleLabel}</MeetingScheduleText>
+            {durationLabel && (
+              <DurationChip>
+                <DurationChipText>{durationLabel}</DurationChipText>
+              </DurationChip>
+            )}
+          </MeetingScheduleRow>
 
-                {locationLabel && (
-                  <MeetingMetaItem>
-                    <Feather
-                      name="map-pin"
-                      size={12}
-                      color={theme.colors.editorial_lavender}
-                    />
-                    <MeetingMetaText numberOfLines={1}>
-                      {locationLabel}
-                    </MeetingMetaText>
-                  </MeetingMetaItem>
-                )}
+          <ModalityBox>
+            <ModalityLeft>
+              <ModalityIconBox>
+                <Feather
+                  name={hasJoinUrl ? "video" : "map-pin"}
+                  size={14}
+                  color="#005bb1"
+                />
+              </ModalityIconBox>
+              <ModalityLabel numberOfLines={1}>
+                {locationLabel || "Detalhes na agenda"}
+              </ModalityLabel>
+            </ModalityLeft>
 
-                {partialWarning && (
-                  <MeetingMetaItem>
-                    <Feather
-                      name="info"
-                      size={12}
-                      color={theme.colors.editorial_muted}
-                    />
-                    <MeetingMetaText numberOfLines={2}>
-                      {partialWarning}
-                    </MeetingMetaText>
-                  </MeetingMetaItem>
-                )}
-              </MeetingMetaList>
-            </MeetingInfoCol>
-          </MeetingTopRow>
+            <JoinRoomButton
+              activeOpacity={0.85}
+              onPress={() => handleOpenJoinUrl(nextMeeting.location?.join_url)}
+              accessibilityRole="button"
+              accessibilityLabel={hasJoinUrl ? "Acessar sala" : "Ver agenda"}
+            >
+              <JoinRoomButtonText>
+                {hasJoinUrl ? "Acessar sala" : "Ver detalhes"}
+              </JoinRoomButtonText>
+              <Feather
+                name={hasJoinUrl ? "external-link" : "arrow-right"}
+                size={12}
+                color="#FFFFFF"
+              />
+            </JoinRoomButton>
+          </ModalityBox>
+
+          {partialWarning && (
+            <PartialWarningRow>
+              <Feather
+                name="info"
+                size={12}
+                color={theme.colors.editorial_muted}
+              />
+              <PartialWarningText numberOfLines={2}>
+                {partialWarning}
+              </PartialWarningText>
+            </PartialWarningRow>
+          )}
         </MeetingCard>
       </TimelineRow>
     );
@@ -405,10 +475,12 @@ export function Home() {
     <Container>
       <Header topInset={insets.top}>
         <HeaderRow>
-          <HeaderBrandBlock>
-            <HeaderDateText>{todayEditorial}</HeaderDateText>
-            <BrandMark showJourneySignature />
-          </HeaderBrandBlock>
+          <HeaderBrandRow>
+            <HeaderBrandBadge>
+              <Feather name="compass" size={18} color="#FFFFFF" />
+            </HeaderBrandBadge>
+            <HeaderBrandTitle>Oriently</HeaderBrandTitle>
+          </HeaderBrandRow>
 
           <HeaderActions>
             <AvatarWrapper>
@@ -422,7 +494,6 @@ export function Home() {
                   <UserIcon name="person" />
                 </UserAvatarFallback>
               )}
-              <AvatarStatusDot />
             </AvatarWrapper>
 
             <LogoutButton
@@ -448,119 +519,137 @@ export function Home() {
       </Header>
 
       <ScrollContent
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: Math.max(insets.bottom, 20),
+          paddingBottom: Math.max(insets.bottom, 24),
         }}
       >
         <Body>
           <WelcomeSection>
-            <GreetingEyebrow>Olá, {firstName}</GreetingEyebrow>
+            <DatePill>
+              <Feather name="calendar" size={12} color="#005bb1" />
+              <DatePillText>{todayEditorial}</DatePillText>
+            </DatePill>
+
             <GreetingTitle isCompact={isCompactScreen}>
-              Seu TCC, no caminho certo.
+              Olá, {firstName} 👋
             </GreetingTitle>
             <WelcomeDescription>
-              Cada orientação é um passo à frente.
+              Vamos avançar com a sua pesquisa hoje?
             </WelcomeDescription>
           </WelcomeSection>
 
           <HeroScheduleCard
-            activeOpacity={0.86}
+            activeOpacity={0.88}
             onPress={() => navigation.navigate("Schedule")}
             accessibilityRole="button"
-            accessibilityLabel="Agendar reunião"
+            accessibilityLabel="Agendar reunião com orientador"
             accessibilityHint="Abre o calendário para escolher data e horário"
           >
-            <HeroTextColumn>
-              <AcademicBadge label="Próximo passo" onDark />
+            <HeroGlowTopRight />
+            <HeroGlowBottomRight />
 
-              <HeroTitle>Agendar reunião</HeroTitle>
-              <HeroDescription>
-                Escolha data e horário disponíveis com seu orientador.
-              </HeroDescription>
+            <HeroStepPill>
+              <Feather name="zap" size={11} color="#FDE047" />
+              <HeroStepPillText>Próximo passo • Orientação</HeroStepPillText>
+            </HeroStepPill>
 
-              <HeroActionPill>
-                <HeroActionPillText>Escolher horário</HeroActionPillText>
-                <Feather
-                  name="arrow-right"
-                  size={13}
-                  color={theme.colors.editorial_navy}
-                />
-              </HeroActionPill>
-            </HeroTextColumn>
+            <HeroMiddleRow>
+              <HeroTextColumn>
+                <HeroTitle>Agendar reunião com orientador</HeroTitle>
+                <HeroDescription>
+                  Escolha data e horário disponíveis na agenda do seu
+                  orientador.
+                </HeroDescription>
+              </HeroTextColumn>
 
-            {showHeroIllustration && (
-              <HeroIllustrationBox isCompact={isCompactScreen}>
-                <HeroTrajectoryArc />
-                <HeroOrbitDotTop />
-                <HeroOrbitDotBottom />
-                <MiniCalendarFrame>
-                  <MiniCalendarTopBar>
-                    <MiniCalendarRing />
-                    <MiniCalendarRing />
-                  </MiniCalendarTopBar>
-                  <MiniCalendarBody>
-                    <MiniCalendarLineShort />
-                    <MiniCalendarLineLong />
-                    <MiniCalendarLineLong />
-                  </MiniCalendarBody>
-                </MiniCalendarFrame>
-                <MiniCompassBadge>
-                  <Feather name="compass" size={15} color="#FFFFFF" />
-                </MiniCompassBadge>
-              </HeroIllustrationBox>
-            )}
+              {showHeroIllustration && (
+                <HeroIllustrationBox isCompact={isCompactScreen}>
+                  <HeroCalendarTile>
+                    <MaterialCommunityIcons
+                      name="calendar-check-outline"
+                      size={26}
+                      color="#FFFFFF"
+                    />
+                    <HeroCompassCorner>
+                      <Feather name="compass" size={13} color="#005bb1" />
+                    </HeroCompassCorner>
+                    <HeroDurationCorner>
+                      <HeroDurationCornerText>30m</HeroDurationCornerText>
+                    </HeroDurationCorner>
+                  </HeroCalendarTile>
+                </HeroIllustrationBox>
+              )}
+            </HeroMiddleRow>
+
+            <HeroActionPill>
+              <HeroActionPillText>Escolher horário</HeroActionPillText>
+              <Feather name="arrow-right" size={16} color="#005bb1" />
+            </HeroActionPill>
           </HeroScheduleCard>
 
           <SecondaryAgendaCard
             activeOpacity={0.82}
             onPress={() => navigation.navigate("Profile")}
             accessibilityRole="button"
-            accessibilityLabel="Visualizar agenda"
-            accessibilityHint="Abre sua agenda com reuniões ativas, realizadas e canceladas"
+            accessibilityLabel="Visualizar agenda completa"
+            accessibilityHint="Abre sua agenda com reuniões confirmadas, histórico e cancelamentos"
           >
-            <SecondaryIconBox>
-              <Feather
-                name="book-open"
-                size={17}
-                color={theme.colors.editorial_navy}
-              />
-            </SecondaryIconBox>
-            <SecondaryTextCol>
-              <SecondaryTitle>Visualizar agenda</SecondaryTitle>
-              <SecondaryDescription>
-                Reuniões confirmadas, histórico e cancelamentos
-              </SecondaryDescription>
-            </SecondaryTextCol>
-            <Feather
-              name="chevron-right"
-              size={18}
-              color={theme.colors.editorial_muted}
-            />
+            <SecondaryLeftRow>
+              <SecondaryIconBox>
+                <Feather name="calendar" size={20} color="#0e006a" />
+              </SecondaryIconBox>
+
+              <SecondaryTextCol>
+                <SecondaryTitle>Visualizar agenda completa</SecondaryTitle>
+                <SecondaryDescription numberOfLines={1}>
+                  Reuniões confirmadas, histórico e cancelamentos.
+                </SecondaryDescription>
+              </SecondaryTextCol>
+            </SecondaryLeftRow>
+
+            <SecondaryChevronCircle>
+              <Feather name="chevron-right" size={17} color="#414754" />
+            </SecondaryChevronCircle>
           </SecondaryAgendaCard>
 
           <SectionHeaderRow>
             <SectionTitleGroup>
-              <SectionDot />
+              <Feather name="flag" size={16} color="#005bb1" />
               <SectionTitle>Próxima orientação</SectionTitle>
             </SectionTitleGroup>
+
             {nextMeeting && (
               <SectionLinkButton
                 activeOpacity={0.75}
                 onPress={() => navigation.navigate("Profile")}
                 accessibilityRole="button"
-                accessibilityLabel="Ver agenda completa"
+                accessibilityLabel="Ver detalhes na agenda"
               >
-                <SectionLinkText>Ver agenda</SectionLinkText>
-                <Feather
-                  name="chevron-right"
-                  size={14}
-                  color={theme.colors.editorial_navy}
-                />
+                <SectionLinkText>Ver detalhes</SectionLinkText>
+                <Feather name="arrow-right" size={13} color="#005bb1" />
               </SectionLinkButton>
             )}
           </SectionHeaderRow>
 
           {renderNextOrientationSection()}
+
+          <TipCard>
+            <TipIconBox>
+              <MaterialCommunityIcons
+                name="lightbulb-outline"
+                size={19}
+                color="#FFFFFF"
+              />
+            </TipIconBox>
+            <TipTextCol>
+              <TipEyebrow>Dica para o encontro</TipEyebrow>
+              <TipBody>
+                Anote os tópicos principais e dúvidas antes da reunião para
+                aproveitar melhor o horário.
+              </TipBody>
+            </TipTextCol>
+          </TipCard>
         </Body>
       </ScrollContent>
     </Container>
