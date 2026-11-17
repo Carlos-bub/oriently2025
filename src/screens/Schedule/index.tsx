@@ -41,6 +41,8 @@ import {
   CalendarWrapper,
   HoursSection,
   HoursHeaderRow,
+  HoursTitleGroup,
+  HoursSectionDot,
   HoursTitle,
   SelectedDateBadge,
   SelectedDateBadgeText,
@@ -48,6 +50,9 @@ import {
   ScheduleItem,
   ScheduleText,
   StateBox,
+  StateIconBadge,
+  StateCompassDot,
+  StateTitle,
   StateText,
   RetryButton,
   RetryButtonText,
@@ -102,8 +107,11 @@ export function Schedule() {
   const submittingRef = useRef(false);
   const isFocused = useIsFocused();
 
-  // 3 columns with 20px horizontal padding on each side and 10px gaps
-  const gridCardWidth = Math.floor((width - 40 - 20) / 3);
+  // 3 colunas em telas normais; 2 colunas em dispositivos muito estreitos (< 340px)
+  const gridColumns = width < 340 ? 2 : 3;
+  const gridCardWidth = Math.floor(
+    (width - 40 - 10 * (gridColumns - 1)) / gridColumns
+  );
 
   const resetState = useCallback(() => {
     setSelectedDate(null);
@@ -374,7 +382,7 @@ export function Schedule() {
 
       <ScrollBody
         contentContainerStyle={{
-          paddingBottom: Math.max(insets.bottom, 16) + 84,
+          paddingBottom: Math.max(insets.bottom, 16) + 96,
         }}
       >
         <ContentWrapper>
@@ -412,8 +420,9 @@ export function Schedule() {
                 backgroundColor: theme.colors.background,
                 calendarBackground: theme.colors.background,
                 todayTextColor: theme.colors.primary_dark,
+                todayBackgroundColor: theme.colors.boxprofile,
                 dayTextColor: theme.colors.text_primary,
-                textDisabledColor: theme.colors.text_light,
+                textDisabledColor: "#CBD5E1",
                 arrowColor: theme.colors.primary_dark,
                 monthTextColor: theme.colors.text_primary,
                 textSectionTitleColor: theme.colors.text_secondary,
@@ -422,6 +431,9 @@ export function Schedule() {
                 textDayFontFamily: theme.fonts.Subtituloslight,
                 textMonthFontFamily: theme.fonts.Subtitulos,
                 textDayHeaderFontFamily: theme.fonts.buttons,
+                textDayFontSize: 14,
+                textMonthFontSize: 16,
+                textDayHeaderFontSize: 12,
               }}
             />
           </CalendarWrapper>
@@ -429,17 +441,29 @@ export function Schedule() {
           {!selectedDate ? (
             <HoursSection>
               <StateBox>
-                <Feather
-                  name={typesError ? "alert-circle" : "calendar"}
-                  size={20}
-                  color={typesError ? theme.colors.cancel : theme.colors.primary}
-                />
+                <StateIconBadge>
+                  <Feather
+                    name={typesError ? "alert-circle" : "calendar"}
+                    size={18}
+                    color={
+                      typesError ? "#DC2626" : theme.colors.primary_dark
+                    }
+                  />
+                  {!typesError && <StateCompassDot />}
+                </StateIconBadge>
+                <StateTitle>
+                  {loadingTypes
+                    ? "Carregando agenda"
+                    : typesError
+                      ? "Não foi possível carregar"
+                      : "Escolha uma data"}
+                </StateTitle>
                 <StateText>
                   {loadingTypes
-                    ? "Carregando agenda do orientador..."
+                    ? "Buscando os tipos de orientação disponíveis..."
                     : typesError
                       ? typesError
-                      : "Selecione uma data no calendário acima para ver os horários disponíveis."}
+                      : "Toque em um dia no calendário acima para ver os horários livres."}
                 </StateText>
                 {typesError && (
                   <RetryButton onPress={fetchUserAndEventType}>
@@ -451,11 +475,14 @@ export function Schedule() {
           ) : (
             <HoursSection>
               <HoursHeaderRow>
-                <HoursTitle>Horários disponíveis</HoursTitle>
+                <HoursTitleGroup>
+                  <HoursSectionDot />
+                  <HoursTitle>Horários disponíveis</HoursTitle>
+                </HoursTitleGroup>
                 <SelectedDateBadge>
                   <Feather
                     name="calendar"
-                    size={12}
+                    size={11}
                     color={theme.colors.primary_dark}
                   />
                   <SelectedDateBadgeText>
@@ -470,15 +497,19 @@ export function Schedule() {
                     size="small"
                     color={theme.colors.primary}
                   />
-                  <StateText>Buscando horários disponíveis...</StateText>
+                  <StateTitle style={{ marginTop: 10 }}>
+                    Buscando horários
+                  </StateTitle>
+                  <StateText>
+                    Consultando a disponibilidade do orientador...
+                  </StateText>
                 </StateBox>
               ) : timesError ? (
                 <StateBox>
-                  <Feather
-                    name="alert-circle"
-                    size={20}
-                    color={theme.colors.cancel}
-                  />
+                  <StateIconBadge>
+                    <Feather name="alert-circle" size={18} color="#DC2626" />
+                  </StateIconBadge>
+                  <StateTitle>Erro ao consultar horários</StateTitle>
                   <StateText>{timesError}</StateText>
                   <RetryButton onPress={fetchAvailableTimes}>
                     <RetryButtonText>Tentar novamente</RetryButtonText>
@@ -493,9 +524,15 @@ export function Schedule() {
                         key={`${item}-${index}`}
                         cardWidth={gridCardWidth}
                         isSelected={isSelected}
-                        activeOpacity={0.8}
+                        activeOpacity={0.78}
                         disabled={submitting}
                         onPress={() => handleSelectHour(item)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Horário ${formatHourLabel(item)}`}
+                        accessibilityState={{
+                          selected: isSelected,
+                          disabled: submitting,
+                        }}
                       >
                         <ScheduleText isSelected={isSelected}>
                           {formatHourLabel(item)}
@@ -506,13 +543,17 @@ export function Schedule() {
                 </HoursGrid>
               ) : (
                 <StateBox>
-                  <Feather
-                    name="clock"
-                    size={20}
-                    color={theme.colors.text_secondary}
-                  />
+                  <StateIconBadge>
+                    <Feather
+                      name="clock"
+                      size={18}
+                      color={theme.colors.text_secondary}
+                    />
+                  </StateIconBadge>
+                  <StateTitle>Sem horários livres</StateTitle>
                   <StateText>
-                    Nenhum horário disponível para esta data.
+                    Nenhum horário disponível para esta data. Tente outro dia no
+                    calendário.
                   </StateText>
                 </StateBox>
               )}

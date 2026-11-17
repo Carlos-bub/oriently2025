@@ -16,9 +16,9 @@ export const ScrollBody = styled.ScrollView.attrs({
 `;
 
 export const Header = styled.View<{ topInset: number }>`
-  padding-top: ${(props: { topInset: number }) => props.topInset + 14}px;
+  padding-top: ${(props: { topInset: number }) => props.topInset + 12}px;
   padding-horizontal: 20px;
-  padding-bottom: 16px;
+  padding-bottom: 14px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.surface};
   border-bottom-width: 1px;
@@ -33,44 +33,44 @@ export const HeaderTag = styled.View`
   gap: 5px;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.boxprofile};
-  padding: 4px 10px;
+  padding: 3px 9px;
   border-radius: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 `;
 
 export const HeaderTagText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.primary_dark};
   font-family: ${theme.fonts.buttons};
-  font-size: ${RFValue(10.5)}px;
+  font-size: ${RFValue(10)}px;
 `;
 
 export const Title = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.text_primary};
   font-family: ${theme.fonts.Titulos};
-  font-size: ${RFValue(21)}px;
-  line-height: ${RFValue(27)}px;
-  margin-bottom: 4px;
+  font-size: ${RFValue(20)}px;
+  line-height: ${RFValue(26)}px;
+  margin-bottom: 3px;
 `;
 
 export const Subtitle = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.text_secondary};
   font-family: ${theme.fonts.Subtituloslight};
-  font-size: ${RFValue(13)}px;
-  line-height: ${RFValue(18)}px;
+  font-size: ${RFValue(12.5)}px;
+  line-height: ${RFValue(17)}px;
 `;
 
 export const ContentWrapper = styled.View`
-  padding: 18px 20px 0px 20px;
+  padding: 16px 20px 0px 20px;
 `;
 
 export const EventTypeList = styled.ScrollView.attrs({
   horizontal: true,
   showsHorizontalScrollIndicator: false,
 })`
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 `;
 
 export const EventTypeChip = styled.TouchableOpacity<{ isSelected?: boolean }>`
@@ -81,8 +81,8 @@ export const EventTypeChip = styled.TouchableOpacity<{ isSelected?: boolean }>`
   border-width: 1px;
   border-color: ${(props: { theme: DefaultTheme; isSelected?: boolean }) =>
     props.isSelected ? props.theme.colors.primary : props.theme.colors.border};
-  padding: 8px 14px;
-  border-radius: 16px;
+  padding: 7px 13px;
+  border-radius: 14px;
   margin-right: 8px;
   justify-content: center;
   align-items: center;
@@ -94,26 +94,26 @@ export const EventTypeChipText = styled.Text<{ isSelected?: boolean }>`
       ? props.theme.colors.background
       : props.theme.colors.text_primary};
   font-family: ${theme.fonts.buttons};
-  font-size: ${RFValue(12)}px;
+  font-size: ${RFValue(11.5)}px;
 `;
 
 export const CalendarWrapper = styled.View`
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.background};
-  border-radius: 20px;
+  border-radius: 18px;
   border-width: 1px;
   border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  padding: 8px;
+  padding: 6px 8px;
   overflow: hidden;
-  elevation: 2;
+  elevation: 1;
   shadow-color: #172b4d;
   shadow-offset: 0px 2px;
-  shadow-opacity: 0.06;
-  shadow-radius: 8px;
+  shadow-opacity: 0.04;
+  shadow-radius: 6px;
 `;
 
 export const HoursSection = styled.View`
-  margin-top: 22px;
+  margin-top: 20px;
 `;
 
 export const HoursHeaderRow = styled.View`
@@ -124,11 +124,25 @@ export const HoursHeaderRow = styled.View`
   gap: 8px;
 `;
 
+export const HoursTitleGroup = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+`;
+
+export const HoursSectionDot = styled.View`
+  width: 7px;
+  height: 7px;
+  border-radius: 3.5px;
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.primary};
+`;
+
 export const HoursTitle = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.text_primary};
   font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(15)}px;
+  font-size: ${RFValue(14)}px;
 `;
 
 export const SelectedDateBadge = styled.View`
@@ -145,7 +159,7 @@ export const SelectedDateBadgeText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.primary_dark};
   font-family: ${theme.fonts.buttons};
-  font-size: ${RFValue(11.5)}px;
+  font-size: ${RFValue(11)}px;
 `;
 
 export const HoursGrid = styled.View`
@@ -157,34 +171,30 @@ export const HoursGrid = styled.View`
 export const ScheduleItem = styled.TouchableOpacity<{
   isSelected?: boolean;
   cardWidth: number;
+  disabled?: boolean;
 }>`
   width: ${(props: { cardWidth: number }) => props.cardWidth}px;
   background-color: ${(props: { theme: DefaultTheme; isSelected?: boolean }) =>
     props.isSelected
-      ? props.theme.colors.boxprofile
+      ? props.theme.colors.primary
       : props.theme.colors.background};
-  border-width: ${(props: { isSelected?: boolean }) =>
-    props.isSelected ? "1.5px" : "1px"};
+  border-width: 1px;
   border-color: ${(props: { theme: DefaultTheme; isSelected?: boolean }) =>
     props.isSelected ? props.theme.colors.primary : props.theme.colors.border};
-  padding-vertical: 12px;
+  padding-vertical: 11px;
   padding-horizontal: 8px;
-  border-radius: 14px;
+  border-radius: 12px;
   align-items: center;
   justify-content: center;
-  elevation: 1;
-  shadow-color: #172b4d;
-  shadow-offset: 0px 1px;
-  shadow-opacity: 0.04;
-  shadow-radius: 4px;
+  opacity: ${(props: { disabled?: boolean }) => (props.disabled ? 0.55 : 1)};
 `;
 
 export const ScheduleText = styled.Text<{ isSelected?: boolean }>`
   color: ${(props: { theme: DefaultTheme; isSelected?: boolean }) =>
     props.isSelected
-      ? props.theme.colors.primary_dark
+      ? props.theme.colors.background
       : props.theme.colors.text_primary};
-  font-size: ${RFValue(13.5)}px;
+  font-size: ${RFValue(13)}px;
   font-family: ${theme.fonts.Subtitulos};
 `;
 
@@ -194,19 +204,55 @@ export const StateBox = styled.View`
   border-radius: 18px;
   border-width: 1px;
   border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  padding: 20px 16px;
+  padding: 18px 16px;
   align-items: center;
   justify-content: center;
+`;
+
+export const StateIconBadge = styled.View`
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.surface};
+  border-width: 1px;
+  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 10px;
+`;
+
+export const StateCompassDot = styled.View`
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.lavender};
+  border-width: 2px;
+  border-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.background};
+`;
+
+export const StateTitle = styled.Text`
+  color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.text_primary};
+  font-family: ${theme.fonts.Subtitulos};
+  font-size: ${RFValue(13.5)}px;
+  text-align: center;
+  margin-bottom: 3px;
 `;
 
 export const StateText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.text_secondary};
   font-family: ${theme.fonts.Subtituloslight};
-  font-size: ${RFValue(13)}px;
+  font-size: ${RFValue(12)}px;
   text-align: center;
-  margin-top: 8px;
-  line-height: ${RFValue(18)}px;
+  line-height: ${RFValue(17)}px;
 `;
 
 export const RetryButton = styled.TouchableOpacity`
