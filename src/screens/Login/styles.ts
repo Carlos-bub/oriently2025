@@ -1,332 +1,458 @@
-import styled from "styled-components/native";
-import { RFValue } from "react-native-responsive-fontsize";
-import { DefaultTheme } from "styled-components/native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import theme from "src/global/styles/theme";
+import styled, { DefaultTheme } from "styled-components/native";
+
+type ThemedProps = { theme: DefaultTheme };
 
 export const Container = styled.View`
   flex: 1;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.surface};
+  background-color: #f9f9ff;
 `;
 
-export const ScrollContent = styled.ScrollView.attrs({
-  showsVerticalScrollIndicator: false,
-  bounces: false,
-})`
+export const ScrollContent = styled.ScrollView`
   flex: 1;
 `;
 
 export const MainColumn = styled.View`
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
   align-self: center;
-  align-items: center;
 `;
 
 export const BrandHeader = styled.View`
   align-items: center;
-  gap: 8px;
   margin-bottom: 18px;
 `;
 
-/* ── Editorial Journey Scene ── */
-export const HeroScene = styled.View<{ isShortScreen?: boolean }>`
-  width: 264px;
-  height: ${(props: { isShortScreen?: boolean }) =>
-    props.isShortScreen ? "144px" : "164px"};
+export const BrandBadgeBox = styled.View`
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background-color: #ffffff;
+  border-width: 1px;
+  border-color: #e4ebff;
   align-items: center;
   justify-content: center;
-  position: relative;
-  margin-bottom: ${(props: { isShortScreen?: boolean }) =>
-    props.isShortScreen ? "16px" : "22px"};
-`;
-
-export const ConcentricArcOuter = styled.View`
-  position: absolute;
-  width: 158px;
-  height: 158px;
-  border-radius: 79px;
-  border-width: 1px;
-  border-color: rgba(37, 139, 255, 0.14);
-`;
-
-export const ConcentricArcInner = styled.View`
-  position: absolute;
-  width: 112px;
-  height: 112px;
-  border-radius: 56px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.boxprofile};
-  border-width: 1px;
-  border-color: rgba(124, 114, 232, 0.22);
-  opacity: 0.78;
-`;
-
-export const TrajectoryTrackLine = styled.View`
-  position: absolute;
-  width: 146px;
-  height: 1.5px;
-  background-color: rgba(124, 114, 232, 0.35);
-  transform: rotate(-16deg);
-`;
-
-export const WaypointDotBlue = styled.View`
-  position: absolute;
-  top: 20px;
-  left: 34px;
-  width: 9px;
-  height: 9px;
-  border-radius: 4.5px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary};
-  opacity: 0.55;
-`;
-
-export const WaypointDotLavender = styled.View`
-  position: absolute;
-  bottom: 22px;
-  right: 30px;
-  width: 11px;
-  height: 11px;
-  border-radius: 5.5px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.editorial_lavender};
-  opacity: 0.65;
-`;
-
-export const FloatingCalendarCard = styled.View`
-  position: absolute;
-  left: 16px;
-  bottom: 14px;
-  width: 94px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.background};
-  border-radius: 16px;
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  overflow: hidden;
-  transform: rotate(-6deg);
-  elevation: 3;
-  shadow-color: #1e355e;
-  shadow-offset: 0px 4px;
-  shadow-opacity: 0.12;
-  shadow-radius: 8px;
-`;
-
-export const FloatingCalendarHeader = styled.View`
-  height: 22px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.primary};
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  padding-horizontal: 12px;
-`;
-
-export const CalendarRingDot = styled.View`
-  width: 5px;
-  height: 5px;
-  border-radius: 2.5px;
-  background-color: rgba(255, 255, 255, 0.9);
-`;
-
-export const FloatingCalendarGrid = styled.View`
-  padding: 9px;
-  gap: 5px;
-`;
-
-export const GridRow = styled.View`
-  flex-direction: row;
-  gap: 5px;
-  justify-content: center;
-`;
-
-export const GridCell = styled.View<{ active?: boolean }>`
-  width: 18px;
-  height: 12px;
-  border-radius: 4px;
-  background-color: ${(props: { theme: DefaultTheme; active?: boolean }) =>
-    props.active ? props.theme.colors.primary : props.theme.colors.surface};
-`;
-
-export const FloatingOrientationCard = styled.View`
-  position: absolute;
-  right: 14px;
-  top: 14px;
-  width: 122px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.background};
-  border-radius: 16px;
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  padding: 11px 12px;
-  transform: rotate(4deg);
+  margin-bottom: 10px;
+  shadow-color: #258bff;
+  shadow-offset: 0px 8px;
+  shadow-opacity: 0.14;
+  shadow-radius: 16px;
   elevation: 4;
-  shadow-color: #1e355e;
-  shadow-offset: 0px 4px;
-  shadow-opacity: 0.1;
-  shadow-radius: 8px;
-  gap: 7px;
 `;
 
-export const OrientationCardHeader = styled.View`
+export const BrandNeedleGroup = styled.View`
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg);
+`;
+
+export const BrandNeedleNorth = styled.View`
+  width: 0px;
+  height: 0px;
+  border-left-width: 5px;
+  border-right-width: 5px;
+  border-bottom-width: 12px;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-bottom-color: #005bb1;
+`;
+
+export const BrandNeedleSouth = styled.View`
+  width: 0px;
+  height: 0px;
+  border-left-width: 5px;
+  border-right-width: 5px;
+  border-top-width: 12px;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-top-color: #7c72e8;
+`;
+
+export const BrandNeedlePivot = styled.View`
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 3.5px;
+  background-color: #ffffff;
+  border-width: 1.5px;
+  border-color: #0f1b32;
+`;
+
+export const BrandTitleRow = styled.View`
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  gap: 6px;
 `;
 
-export const OrientationPill = styled.View`
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.boxprofile};
+export const BrandTitle = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Titulos};
+  font-size: 24px;
+  color: #0f1b32;
+  letter-spacing: -0.5px;
+`;
+
+export const ProPill = styled.View`
+  background-color: #d6e3ff;
   padding: 2px 7px;
-  border-radius: 8px;
+  border-radius: 999px;
 `;
 
-export const OrientationPillText = styled.Text`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.editorial_navy};
-  font-family: ${theme.fonts.buttons};
-  font-size: ${RFValue(9)}px;
+export const ProPillText = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Titulos};
+  font-size: 9px;
+  color: #001b3d;
+  letter-spacing: 0.8px;
 `;
 
-export const AcademicIconSmall = styled(MaterialCommunityIcons)`
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.editorial_navy};
-  font-size: 16px;
+export const BrandEyebrow = styled.Text`
+  margin-top: 2px;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 10.5px;
+  color: #005bb1;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 `;
 
-export const SkeletonLineShort = styled.View`
-  width: 58px;
-  height: 5px;
-  border-radius: 2.5px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.editorial_lavender};
-  opacity: 0.7;
-`;
-
-export const SkeletonLineLong = styled.View`
-  width: 88px;
-  height: 5px;
-  border-radius: 2.5px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.border};
-`;
-
-export const CenterCompassRing = styled.View`
-  width: 46px;
-  height: 46px;
-  border-radius: 23px;
-  background-color: rgba(124, 114, 232, 0.18);
+export const HeroCard = styled.View<{ isShortScreen?: boolean }>`
+  position: relative;
+  width: 100%;
+  height: ${({ isShortScreen }: { isShortScreen?: boolean }) =>
+    isShortScreen ? 190 : 224}px;
+  border-radius: 20px;
+  background-color: #f1f3ff;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
   align-items: center;
   justify-content: center;
+  margin-bottom: 18px;
+  shadow-color: #0f1b32;
+  shadow-offset: 0px 10px;
+  shadow-opacity: 0.06;
+  shadow-radius: 20px;
+  elevation: 3;
 `;
 
-export const CenterCompassBadge = styled.View`
-  width: 38px;
-  height: 38px;
-  border-radius: 19px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.editorial_lavender};
+export const GlowTopRight = styled.View`
+  position: absolute;
+  top: -36px;
+  right: -28px;
+  width: 140px;
+  height: 140px;
+  border-radius: 70px;
+  background-color: rgba(37, 139, 255, 0.14);
+`;
+
+export const GlowBottomLeft = styled.View`
+  position: absolute;
+  bottom: -40px;
+  left: -28px;
+  width: 140px;
+  height: 140px;
+  border-radius: 70px;
+  background-color: rgba(124, 114, 232, 0.14);
+`;
+
+type TrailDotProps = {
+  leftPct: number;
+  topPct: number;
+  size?: number;
+  color?: string;
+};
+
+export const TrailDot = styled.View<TrailDotProps>`
+  position: absolute;
+  left: ${({ leftPct }: TrailDotProps) => leftPct}%;
+  top: ${({ topPct }: TrailDotProps) => topPct}%;
+  width: ${({ size }: TrailDotProps) => size ?? 5}px;
+  height: ${({ size }: TrailDotProps) => size ?? 5}px;
+  border-radius: ${({ size }: TrailDotProps) => (size ?? 5) / 2}px;
+  background-color: ${({ color }: TrailDotProps) => color ?? "#94b8ff"};
+`;
+
+type MilestoneNodeProps = {
+  leftPct: number;
+  topPct: number;
+  bgColor?: string;
+};
+
+export const MilestoneNode = styled.View<MilestoneNodeProps>`
+  position: absolute;
+  left: ${({ leftPct }: MilestoneNodeProps) => leftPct}%;
+  top: ${({ topPct }: MilestoneNodeProps) => topPct}%;
+  width: 12px;
+  height: 12px;
+  border-radius: 6px;
+  background-color: ${({ bgColor }: MilestoneNodeProps) =>
+    bgColor ?? "#258bff"};
   border-width: 2.5px;
-  border-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.background};
-  align-items: center;
-  justify-content: center;
-  elevation: 5;
-  shadow-color: #1e355e;
-  shadow-offset: 0px 3px;
-  shadow-opacity: 0.18;
-  shadow-radius: 6px;
+  border-color: #ffffff;
+  shadow-color: #0f1b32;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.14;
+  shadow-radius: 4px;
+  elevation: 2;
 `;
 
-/* ── Copy ── */
-export const TextBlock = styled.View`
+export const CompassOuterRing = styled.View<{ isShortScreen?: boolean }>`
+  width: ${({ isShortScreen }: { isShortScreen?: boolean }) =>
+    isShortScreen ? 92 : 104}px;
+  height: ${({ isShortScreen }: { isShortScreen?: boolean }) =>
+    isShortScreen ? 92 : 104}px;
+  border-radius: ${({ isShortScreen }: { isShortScreen?: boolean }) =>
+    isShortScreen ? 46 : 52}px;
+  background-color: rgba(255, 255, 255, 0.85);
   align-items: center;
-  margin-bottom: 22px;
-  padding-horizontal: 8px;
+  justify-content: center;
+  shadow-color: #1e355e;
+  shadow-offset: 0px 10px;
+  shadow-opacity: 0.12;
+  shadow-radius: 18px;
+  elevation: 5;
+`;
+
+export const CompassInnerDisk = styled.View<{ isShortScreen?: boolean }>`
+  width: ${({ isShortScreen }: { isShortScreen?: boolean }) =>
+    isShortScreen ? 72 : 82}px;
+  height: ${({ isShortScreen }: { isShortScreen?: boolean }) =>
+    isShortScreen ? 72 : 82}px;
+  border-radius: ${({ isShortScreen }: { isShortScreen?: boolean }) =>
+    isShortScreen ? 36 : 41}px;
+  background-color: #ffffff;
+  border-width: 1px;
+  border-color: #e2e8f0;
+  align-items: center;
+  justify-content: center;
+`;
+
+type CardinalDotProps = {
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
+};
+
+export const CardinalDot = styled.View<CardinalDotProps>`
+  position: absolute;
+  ${({ top }: CardinalDotProps) => (top !== undefined ? `top: ${top}px;` : "")}
+  ${({ bottom }: CardinalDotProps) =>
+    bottom !== undefined ? `bottom: ${bottom}px;` : ""}
+  ${({ left }: CardinalDotProps) =>
+    left !== undefined ? `left: ${left}px;` : ""}
+  ${({ right }: CardinalDotProps) =>
+    right !== undefined ? `right: ${right}px;` : ""}
+  width: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: #cbd5e1;
+`;
+
+export const HeroNeedleGroup = styled.View`
+  align-items: center;
+  justify-content: center;
+  transform: rotate(38deg);
+`;
+
+export const HeroNeedleNorth = styled.View`
+  width: 0px;
+  height: 0px;
+  border-left-width: 7px;
+  border-right-width: 7px;
+  border-bottom-width: 22px;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-bottom-color: #005bb1;
+`;
+
+export const HeroNeedleSouth = styled.View`
+  width: 0px;
+  height: 0px;
+  border-left-width: 7px;
+  border-right-width: 7px;
+  border-top-width: 22px;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-top-color: #7c72e8;
+`;
+
+export const HeroNeedleCenter = styled.View`
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #0f1b32;
+  border-width: 2px;
+  border-color: #ffffff;
+`;
+
+export const FloatingStatusCardTop = styled.View`
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.96);
+  padding: 7px 10px;
+  border-radius: 12px;
+  border-width: 1px;
+  border-color: #ffffff;
+  shadow-color: #0f1b32;
+  shadow-offset: 0px 4px;
+  shadow-opacity: 0.08;
+  shadow-radius: 10px;
+  elevation: 3;
+`;
+
+export const FloatingCardIconBlue = styled.View`
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background-color: #dce1ff;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const FloatingStatusCardBottom = styled.View`
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.96);
+  padding: 7px 10px;
+  border-radius: 12px;
+  border-width: 1px;
+  border-color: #ffffff;
+  shadow-color: #0f1b32;
+  shadow-offset: 0px 4px;
+  shadow-opacity: 0.08;
+  shadow-radius: 10px;
+  elevation: 3;
+`;
+
+export const FloatingCardIconEmerald = styled.View`
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  background-color: #d1fae5;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const FloatingCardTextGroup = styled.View`
+  flex-direction: column;
+`;
+
+export const FloatingCardMeta = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 9px;
+  color: #64748b;
+  letter-spacing: 0.3px;
+`;
+
+export const FloatingCardTitle = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Titulos};
+  font-size: 11px;
+  color: #0f1b32;
+`;
+
+export const ValuePropSection = styled.View`
+  align-items: center;
+  margin-bottom: 18px;
+`;
+
+export const JourneyPill = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  background-color: #dce1ff;
+  padding: 5px 12px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+`;
+
+export const JourneyPillText = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 10px;
+  color: #023cad;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 `;
 
 export const Title = styled.Text<{ isCompact?: boolean }>`
-  font-size: ${(props: { isCompact?: boolean }) =>
-    props.isCompact ? RFValue(21) : RFValue(24)}px;
-  line-height: ${(props: { isCompact?: boolean }) =>
-    props.isCompact ? RFValue(27) : RFValue(31)}px;
-  font-family: ${theme.fonts.Titulos};
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.editorial_navy};
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Titulos};
+  font-size: ${({ isCompact }: { isCompact?: boolean }) =>
+    isCompact ? 23 : 26}px;
+  line-height: ${({ isCompact }: { isCompact?: boolean }) =>
+    isCompact ? 30 : 33}px;
+  color: #0f1b32;
   text-align: center;
+  letter-spacing: -0.6px;
   margin-bottom: 8px;
 `;
 
 export const Subtitle = styled.Text`
-  font-size: ${RFValue(13)}px;
-  line-height: ${RFValue(19)}px;
-  font-family: ${theme.fonts.Subtituloslight};
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.editorial_muted};
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtituloslight};
+  font-size: 13.5px;
+  line-height: 20px;
+  color: #444653;
   text-align: center;
-  max-width: 300px;
+  padding-horizontal: 4px;
 `;
 
-/* ── Actions & Footer ── */
+export const ProgressDotsRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+`;
+
+export const ProgressDotActive = styled.View`
+  width: 28px;
+  height: 6px;
+  border-radius: 3px;
+  background-color: #005bb1;
+`;
+
+export const ProgressDotMuted = styled.View`
+  width: 7px;
+  height: 7px;
+  border-radius: 3.5px;
+  background-color: #d8e2ff;
+`;
+
 export const ActionsStack = styled.View`
   width: 100%;
   gap: 10px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 `;
 
-export const GoogleButton = styled.TouchableOpacity<{ disabled?: boolean }>`
+export const GoogleButton = styled.TouchableOpacity`
   width: 100%;
-  min-height: 50px;
-  padding-horizontal: 18px;
-  padding-vertical: 12px;
+  height: 54px;
+  border-radius: 16px;
+  background-color: #ffffff;
+  border-width: 1px;
+  border-color: #e2e8f0;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
-  border-radius: 16px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.background};
-  border-width: 1px;
-  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  opacity: ${(props: { disabled?: boolean }) => (props.disabled ? 0.6 : 1)};
+  justify-content: space-between;
+  padding-horizontal: 18px;
+  shadow-color: #0f1b32;
+  shadow-offset: 0px 6px;
+  shadow-opacity: 0.06;
+  shadow-radius: 12px;
   elevation: 2;
-  shadow-color: #1e355e;
-  shadow-offset: 0px 3px;
-  shadow-opacity: 0.08;
-  shadow-radius: 8px;
 `;
 
-export const GoogleButtonText = styled.Text`
-  font-size: ${RFValue(14)}px;
-  font-family: ${theme.fonts.Subtitulos};
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.editorial_navy};
-  margin-left: 10px;
-`;
-
-export const DemoButton = styled.TouchableOpacity<{ disabled?: boolean }>`
-  width: 100%;
-  min-height: 46px;
-  padding-horizontal: 18px;
-  padding-vertical: 10px;
+export const GoogleButtonLeft = styled.View`
   flex-direction: row;
   align-items: center;
-  justify-content: center;
-  border-radius: 16px;
-  background-color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.boxprofile};
-  border-width: 1px;
-  border-color: #dce8fd;
-  gap: 8px;
-  opacity: ${(props: { disabled?: boolean }) => (props.disabled ? 0.6 : 1)};
-`;
-
-export const DemoButtonText = styled.Text`
-  font-size: ${RFValue(13)}px;
-  font-family: ${theme.fonts.Subtitulos};
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.editorial_navy};
+  gap: 12px;
 `;
 
 export const Icon = styled.Image`
@@ -334,12 +460,39 @@ export const Icon = styled.Image`
   height: 20px;
 `;
 
+export const GoogleButtonText = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 15px;
+  color: #0f1b32;
+`;
+
+export const DemoButton = styled.TouchableOpacity`
+  width: 100%;
+  height: 48px;
+  border-radius: 16px;
+  background-color: #dce1ff;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+`;
+
+export const DemoButtonText = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 14px;
+  color: #023cad;
+`;
+
 export const FooterText = styled.Text`
-  font-size: ${RFValue(11)}px;
-  line-height: ${RFValue(16)}px;
-  font-family: ${theme.fonts.Subtituloslight};
-  color: ${(props: { theme: DefaultTheme }) =>
-    props.theme.colors.editorial_muted};
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtituloslight};
+  font-size: 11.5px;
+  line-height: 17px;
+  color: #6d7c93;
   text-align: center;
-  max-width: 280px;
+  padding-horizontal: 12px;
+`;
+
+export const FooterLinkText = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  color: #005bb1;
 `;

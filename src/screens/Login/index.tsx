@@ -2,49 +2,74 @@ import React, { useState, useEffect } from "react";
 import { ActivityIndicator, useWindowDimensions } from "react-native";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "styled-components/native";
 
 import { useAuth } from "../../contexts/AuthContext";
 import { useDialog } from "../../contexts/DialogContext";
-import { AcademicBadge, BrandMark } from "../../components/AcademicFlow";
 import {
   Container,
   ScrollContent,
   MainColumn,
   BrandHeader,
-  HeroScene,
-  ConcentricArcOuter,
-  ConcentricArcInner,
-  TrajectoryTrackLine,
-  WaypointDotBlue,
-  WaypointDotLavender,
-  FloatingCalendarCard,
-  FloatingCalendarHeader,
-  CalendarRingDot,
-  FloatingCalendarGrid,
-  GridRow,
-  GridCell,
-  FloatingOrientationCard,
-  OrientationCardHeader,
-  OrientationPill,
-  OrientationPillText,
-  AcademicIconSmall,
-  SkeletonLineShort,
-  SkeletonLineLong,
-  CenterCompassRing,
-  CenterCompassBadge,
-  TextBlock,
+  BrandBadgeBox,
+  BrandNeedleGroup,
+  BrandNeedleNorth,
+  BrandNeedleSouth,
+  BrandNeedlePivot,
+  BrandTitleRow,
+  BrandTitle,
+  ProPill,
+  ProPillText,
+  BrandEyebrow,
+  HeroCard,
+  GlowTopRight,
+  GlowBottomLeft,
+  TrailDot,
+  MilestoneNode,
+  CompassOuterRing,
+  CompassInnerDisk,
+  CardinalDot,
+  HeroNeedleGroup,
+  HeroNeedleNorth,
+  HeroNeedleSouth,
+  HeroNeedleCenter,
+  FloatingStatusCardTop,
+  FloatingCardIconBlue,
+  FloatingStatusCardBottom,
+  FloatingCardIconEmerald,
+  FloatingCardTextGroup,
+  FloatingCardMeta,
+  FloatingCardTitle,
+  ValuePropSection,
+  JourneyPill,
+  JourneyPillText,
   Title,
   Subtitle,
+  ProgressDotsRow,
+  ProgressDotActive,
+  ProgressDotMuted,
   ActionsStack,
   GoogleButton,
+  GoogleButtonLeft,
   GoogleButtonText,
   DemoButton,
   DemoButtonText,
   Icon,
   FooterText,
+  FooterLinkText,
 } from "./styles";
+
+const TRAJECTORY_DOTS = [
+  { leftPct: 11, topPct: 72, color: "#93c5fd" },
+  { leftPct: 18, topPct: 68, color: "#93c5fd" },
+  { leftPct: 26, topPct: 64, color: "#a5b4fc" },
+  { leftPct: 34, topPct: 58, color: "#a5b4fc" },
+  { leftPct: 62, topPct: 42, color: "#a5b4fc" },
+  { leftPct: 70, topPct: 36, color: "#93c5fd" },
+  { leftPct: 78, topPct: 31, color: "#93c5fd" },
+  { leftPct: 86, topPct: 27, color: "#93c5fd" },
+];
 
 export function LoginScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -158,70 +183,105 @@ export function LoginScreen() {
   return (
     <Container>
       <ScrollContent
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           flexGrow: 1,
           justifyContent: "center",
-          paddingTop: Math.max(insets.top, 16) + 12,
+          paddingTop: Math.max(insets.top, 16) + 8,
           paddingBottom: Math.max(insets.bottom, 16) + 12,
           paddingHorizontal: 24,
         }}
       >
         <MainColumn>
           <BrandHeader>
-            <BrandMark showJourneySignature />
-            <AcademicBadge label="Em direção ao TCC" />
+            <BrandBadgeBox accessible={false}>
+              <BrandNeedleGroup>
+                <BrandNeedleNorth />
+                <BrandNeedleSouth />
+                <BrandNeedlePivot />
+              </BrandNeedleGroup>
+            </BrandBadgeBox>
+
+            <BrandTitleRow>
+              <BrandTitle>Oriently</BrandTitle>
+              <ProPill>
+                <ProPillText>PRO</ProPillText>
+              </ProPill>
+            </BrandTitleRow>
+
+            <BrandEyebrow>Em direção ao TCC</BrandEyebrow>
           </BrandHeader>
 
-          <HeroScene isShortScreen={isShortScreen} accessible={false}>
-            <ConcentricArcOuter />
-            <ConcentricArcInner />
-            <TrajectoryTrackLine />
-            <WaypointDotBlue />
-            <WaypointDotLavender />
+          <HeroCard isShortScreen={isShortScreen} accessible={false}>
+            <GlowTopRight />
+            <GlowBottomLeft />
 
-            <FloatingCalendarCard>
-              <FloatingCalendarHeader>
-                <CalendarRingDot />
-                <CalendarRingDot />
-              </FloatingCalendarHeader>
-              <FloatingCalendarGrid>
-                <GridRow>
-                  <GridCell />
-                  <GridCell active />
-                  <GridCell />
-                </GridRow>
-                <GridRow>
-                  <GridCell />
-                  <GridCell />
-                  <GridCell />
-                </GridRow>
-              </FloatingCalendarGrid>
-            </FloatingCalendarCard>
+            {TRAJECTORY_DOTS.map((dot, index) => (
+              <TrailDot
+                key={index}
+                leftPct={dot.leftPct}
+                topPct={dot.topPct}
+                color={dot.color}
+              />
+            ))}
 
-            <FloatingOrientationCard>
-              <OrientationCardHeader>
-                <OrientationPill>
-                  <OrientationPillText>TCC</OrientationPillText>
-                </OrientationPill>
-                <AcademicIconSmall name="school-outline" />
-              </OrientationCardHeader>
-              <SkeletonLineShort />
-              <SkeletonLineLong />
-            </FloatingOrientationCard>
+            <MilestoneNode leftPct={7} topPct={73} bgColor="#258BFF" />
+            <MilestoneNode leftPct={89} topPct={23} bgColor="#7C72E8" />
 
-            <CenterCompassRing>
-              <CenterCompassBadge>
-                <Feather name="compass" size={17} color="#FFFFFF" />
-              </CenterCompassBadge>
-            </CenterCompassRing>
-          </HeroScene>
+            <CompassOuterRing isShortScreen={isShortScreen}>
+              <CompassInnerDisk isShortScreen={isShortScreen}>
+                <CardinalDot top={7} />
+                <CardinalDot bottom={7} />
+                <CardinalDot left={7} />
+                <CardinalDot right={7} />
 
-          <TextBlock>
+                <HeroNeedleGroup>
+                  <HeroNeedleNorth />
+                  <HeroNeedleSouth />
+                  <HeroNeedleCenter />
+                </HeroNeedleGroup>
+              </CompassInnerDisk>
+            </CompassOuterRing>
+
+            <FloatingStatusCardTop>
+              <FloatingCardIconBlue>
+                <Feather name="calendar" size={13} color="#005bb1" />
+              </FloatingCardIconBlue>
+              <FloatingCardTextGroup>
+                <FloatingCardMeta>17 NOV • 14:30</FloatingCardMeta>
+                <FloatingCardTitle>Orientação Ativa</FloatingCardTitle>
+              </FloatingCardTextGroup>
+            </FloatingStatusCardTop>
+
+            <FloatingStatusCardBottom>
+              <FloatingCardIconEmerald>
+                <Feather name="check-circle" size={13} color="#059669" />
+              </FloatingCardIconEmerald>
+              <FloatingCardTextGroup>
+                <FloatingCardTitle>Capítulo 2</FloatingCardTitle>
+                <FloatingCardMeta>Validado pelo orientador</FloatingCardMeta>
+              </FloatingCardTextGroup>
+            </FloatingStatusCardBottom>
+          </HeroCard>
+
+          <ValuePropSection>
+            <JourneyPill>
+              <Feather name="compass" size={12} color="#023cad" />
+              <JourneyPillText>Jornada acadêmica</JourneyPillText>
+            </JourneyPill>
+
             <Title isCompact={isCompact}>Seu TCC, no caminho certo.</Title>
             <Subtitle>
-              Organize suas orientações, agende reuniões e acompanhe cada etapa.
+              Organize suas orientações acadêmicas, agende reuniões com
+              facilidade e acompanhe cada etapa do seu projeto rumo à aprovação.
             </Subtitle>
-          </TextBlock>
+
+            <ProgressDotsRow accessible={false}>
+              <ProgressDotActive />
+              <ProgressDotMuted />
+              <ProgressDotMuted />
+            </ProgressDotsRow>
+          </ValuePropSection>
 
           <ActionsStack>
             <GoogleButton
@@ -232,14 +292,18 @@ export function LoginScreen() {
               accessibilityLabel="Continuar com Google"
               accessibilityHint="Autentica com sua conta Google para acessar suas reuniões"
             >
-              {isSubmitting ? (
-                <ActivityIndicator size="small" color={theme.colors.primary} />
-              ) : (
-                <Icon source={require("../../../assets/google.png")} />
-              )}
-              <GoogleButtonText>
-                {isSubmitting ? "Conectando..." : "Continuar com Google"}
-              </GoogleButtonText>
+              <GoogleButtonLeft>
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                ) : (
+                  <Icon source={require("../../../assets/google.png")} />
+                )}
+                <GoogleButtonText>
+                  {isSubmitting ? "Conectando..." : "Continuar com Google"}
+                </GoogleButtonText>
+              </GoogleButtonLeft>
+
+              <Feather name="arrow-right" size={18} color="#64748B" />
             </GoogleButton>
 
             <DemoButton
@@ -260,18 +324,19 @@ export function LoginScreen() {
               accessibilityLabel="Explorar modo demo"
               accessibilityHint="Entra no aplicativo em modo de demonstração"
             >
-              <Feather
-                name="compass"
-                size={15}
-                color={theme.colors.editorial_navy}
+              <MaterialCommunityIcons
+                name="creation"
+                size={16}
+                color="#023cad"
               />
               <DemoButtonText>Explorar modo demo</DemoButtonText>
             </DemoButton>
           </ActionsStack>
 
           <FooterText>
-            Ao continuar, você concorda com os Termos de Uso e Política de
-            Privacidade.
+            Ao continuar, você concorda com os{" "}
+            <FooterLinkText>Termos de Uso</FooterLinkText> e{" "}
+            <FooterLinkText>Política de Privacidade</FooterLinkText>.
           </FooterText>
         </MainColumn>
       </ScrollContent>
