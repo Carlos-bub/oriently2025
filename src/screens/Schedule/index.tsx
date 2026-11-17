@@ -17,6 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { useTheme } from "styled-components/native";
 
 import "../../utils/calendarLocale";
+import { OrientlyTopBar } from "../../components/OrientlyTopBar";
 import { useDialog } from "../../contexts/DialogContext";
 import { getFriendlyApiErrorMessage } from "../../services/apiClient";
 import {
@@ -440,7 +441,9 @@ export function Schedule() {
 
   return (
     <Container>
-      <Header topInset={insets.top}>
+      <OrientlyTopBar />
+
+      <Header>
         <HeaderTag>
           <Feather name="compass" size={12} color="#005bb1" />
           <HeaderTagText>

@@ -11,10 +11,10 @@ export const ScrollBody = styled.ScrollView`
   flex: 1;
 `;
 
-export const Header = styled.View<{ topInset: number }>`
+export const Header = styled.View`
   width: 100%;
   background-color: #f9f9ff;
-  padding-top: ${({ topInset }: { topInset: number }) => topInset + 12}px;
+  padding-top: 4px;
   padding-bottom: 12px;
   padding-horizontal: 20px;
 `;

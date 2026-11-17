@@ -28,6 +28,7 @@ import {
 import { CalendlyEvent } from "../../services/types";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDialog } from "../../contexts/DialogContext";
+import { OrientlyTopBar } from "../../components/OrientlyTopBar";
 import {
   Container,
   Header,
@@ -648,7 +649,9 @@ export function Profile() {
 
   return (
     <Container>
-      <Header topInset={insets.top}>
+      <OrientlyTopBar />
+
+      <Header>
         <HeaderTopRow>
           <HeaderTag>
             <Feather name="compass" size={11} color="#005bb1" />

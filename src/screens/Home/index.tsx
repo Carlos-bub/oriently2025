@@ -7,6 +7,7 @@ import { useTheme } from "styled-components/native";
 
 import { useAuth } from "../../contexts/AuthContext";
 import { useDialog } from "../../contexts/DialogContext";
+import { OrientlyTopBar } from "../../components/OrientlyTopBar";
 import { getFriendlyApiErrorMessage } from "../../services/apiClient";
 import {
   getUserInfo,
@@ -475,50 +476,11 @@ export function Home() {
 
   return (
     <Container>
-      <Header topInset={insets.top}>
-        <HeaderRow>
-          <HeaderBrandRow>
-            <HeaderBrandBadge>
-              <Feather name="compass" size={18} color="#FFFFFF" />
-            </HeaderBrandBadge>
-            <HeaderBrandTitle>Oriently</HeaderBrandTitle>
-          </HeaderBrandRow>
-
-          <HeaderActions>
-            <AvatarWrapper>
-              {user?.photo ? (
-                <UserPhoto
-                  source={{ uri: user.photo }}
-                  accessibilityLabel={`Foto de perfil de ${firstName}`}
-                />
-              ) : (
-                <UserAvatarFallback>
-                  <UserIcon name="person" />
-                </UserAvatarFallback>
-              )}
-            </AvatarWrapper>
-
-            <LogoutButton
-              onPress={handleLogout}
-              disabled={isLoggingOut}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Sair da conta"
-              accessibilityHint="Encerra sua sessão atual"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              {isLoggingOut ? (
-                <ActivityIndicator
-                  size="small"
-                  color={theme.colors.editorial_navy}
-                />
-              ) : (
-                <LogoutIcon name="logout" />
-              )}
-            </LogoutButton>
-          </HeaderActions>
-        </HeaderRow>
-      </Header>
+      <OrientlyTopBar
+        showLogout
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+      />
 
       <ScrollContent
         showsVerticalScrollIndicator={false}
