@@ -3,6 +3,7 @@ import React, { useEffect, useCallback } from "react";
 import { ThemeProvider } from "styled-components/native";
 import * as SplashScreen from "expo-splash-screen";
 import { NavigationContainer } from "@react-navigation/native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 //Fontes
@@ -17,20 +18,26 @@ import {
   Inter_800ExtraBold,
 } from "@expo-google-fonts/inter";
 import {
-  Poppins_700Bold,
+  Poppins_500Medium,
   Poppins_600SemiBold,
+  Poppins_700Bold,
 } from "@expo-google-fonts/poppins";
 
 //Componentes
 import { Loading } from "./src/components/Loading";
 import theme from "./src/global/styles/theme";
+import { DialogProvider } from "./src/contexts/DialogContext";
 import { AuthContextProvider } from "./src/contexts/AuthContext";
 import { Routes } from "./src/routes";
 
 SplashScreen.preventAutoHideAsync();
 
+const googleWebClientId = (
+  process.env as Record<string, string | undefined>
+).EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+
 GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID, 
+  webClientId: googleWebClientId, 
   offlineAccess: true,
   forceCodeForRefreshToken: true, 
   iosClientId: '', // implementação Futura
@@ -54,8 +61,9 @@ export default function App() {
     Inter_400Regular,
     Inter_500Medium,
     Inter_800ExtraBold,
-    Poppins_700Bold,
+    Poppins_500Medium,
     Poppins_600SemiBold,
+    Poppins_700Bold,
   });
 
   const onLayoutRootView = useCallback(async () => {
@@ -69,13 +77,17 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <AuthContextProvider>
-        <NavigationContainer onReady={onLayoutRootView}>
-          <Routes />
-          <StatusBar style="light" backgroundColor="transparent" translucent />
-        </NavigationContainer>
-      </AuthContextProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider theme={theme}>
+        <DialogProvider>
+          <AuthContextProvider>
+            <NavigationContainer onReady={onLayoutRootView}>
+              <Routes />
+              <StatusBar style="dark" backgroundColor="transparent" translucent />
+            </NavigationContainer>
+          </AuthContextProvider>
+        </DialogProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

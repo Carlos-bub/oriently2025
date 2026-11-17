@@ -1,25 +1,45 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { Alert } from "react-native";
+import { configureApiAuth } from "../services/apiClient";
+import { clearInviteesCache } from "../services/calendlyService";
+import { resetDemoStore, setDemoModeActive } from "../services/demoData";
+import { useDialog } from "./DialogContext";
 
-interface UserData {
+export interface UserData {
   name: string;
   email: string;
   photo: string;
 }
 
-interface AuthContextData {
-  user: UserData | null;
-  isLoading: boolean;
-  signIn: (userData: UserData) => Promise<void>;
-  signOut: () => Promise<void>;
+interface StoredSession {
+  user: UserData;
+  isDemo: boolean;
 }
 
-// Criando o contexto
+interface AuthContextData {
+  user: UserData | null;
+  idToken: string | null;
+  isDemo: boolean;
+  isLoading: boolean;
+  signIn: (
+    userData: UserData,
+    googleIdToken?: string | null,
+    demoMode?: boolean
+  ) => Promise<void>;
+  signOut: () => Promise<void>;
+  refreshIdToken: () => Promise<string | null>;
+}
+
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
-// Chaves para o AsyncStorage
 const USER_STORAGE_KEY = "@Oriently:user";
 
 export function AuthContextProvider({
@@ -27,71 +47,194 @@ export function AuthContextProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const { showDialog } = useDialog();
   const [user, setUser] = useState<UserData | null>(null);
+  const [idToken, setIdToken] = useState<string | null>(null);
+  const [isDemo, setIsDemo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Carregar dados do usuário do AsyncStorage
+  const idTokenRef = useRef<string | null>(null);
+  const isDemoRef = useRef(false);
+
+  const updateIdToken = useCallback((token: string | null) => {
+    idTokenRef.current = token;
+    setIdToken(token);
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try {
+      setIsLoading(true);
+
+      try {
+        await GoogleSignin.signOut();
+      } catch (error) {
+        console.log("Erro ao fazer logout do Google:", error);
+      }
+
+      await AsyncStorage.removeItem(USER_STORAGE_KEY);
+      clearInviteesCache();
+      setDemoModeActive(false);
+      updateIdToken(null);
+      isDemoRef.current = false;
+      setIsDemo(false);
+      setUser(null);
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+      showDialog({
+        variant: "danger",
+        title: "Erro ao sair",
+        message: "Não foi possível fazer logout corretamente.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [updateIdToken]);
+
+  const refreshIdToken = useCallback(async (): Promise<string | null> => {
+    if (isDemoRef.current) {
+      return null;
+    }
+
+    try {
+      const silentResult = await GoogleSignin.signInSilently();
+      let freshToken =
+        silentResult.type === "success" ? silentResult.data?.idToken ?? null : null;
+
+      if (!freshToken) {
+        const tokens = await GoogleSignin.getTokens();
+        freshToken = tokens.idToken || null;
+      }
+
+      if (freshToken) {
+        updateIdToken(freshToken);
+        return freshToken;
+      }
+    } catch (error) {
+      console.warn("Não foi possível renovar o Google ID Token:", error);
+    }
+
+    updateIdToken(null);
+    return null;
+  }, [updateIdToken]);
+
+  useEffect(() => {
+    configureApiAuth({
+      getIdToken: () => idTokenRef.current,
+      refreshIdToken,
+      onUnauthorized: async () => {
+        await signOut();
+      },
+    });
+
+    return () => {
+      configureApiAuth(null);
+    };
+  }, [refreshIdToken, signOut]);
+
   useEffect(() => {
     async function loadStoredData() {
       try {
         setIsLoading(true);
-        const storedUser = await AsyncStorage.getItem(USER_STORAGE_KEY);
+        const rawStored = await AsyncStorage.getItem(USER_STORAGE_KEY);
 
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-          console.log("Usuário carregado do armazenamento local");
+        if (!rawStored) {
+          return;
+        }
+
+        const parsed = JSON.parse(rawStored) as StoredSession | UserData;
+        const storedUser = "user" in parsed ? parsed.user : parsed;
+        const storedIsDemo = "isDemo" in parsed ? Boolean(parsed.isDemo) : false;
+
+        if (storedIsDemo) {
+          isDemoRef.current = true;
+          resetDemoStore(storedUser.email);
+          setDemoModeActive(true);
+          setIsDemo(true);
+          updateIdToken(null);
+          setUser(storedUser);
+          return;
+        }
+
+        // Nunca considerar dados locais como prova de autenticação: exige ID Token válido do Google
+        isDemoRef.current = false;
+        setDemoModeActive(false);
+        const freshToken = await refreshIdToken();
+        if (freshToken) {
+          setIsDemo(false);
+          setUser(storedUser);
+        } else {
+          await AsyncStorage.removeItem(USER_STORAGE_KEY);
+          updateIdToken(null);
+          setUser(null);
         }
       } catch (error) {
         console.error("Erro ao carregar dados armazenados:", error);
+        await AsyncStorage.removeItem(USER_STORAGE_KEY);
+        updateIdToken(null);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
     }
 
     loadStoredData();
-  }, []);
+  }, [refreshIdToken, updateIdToken]);
 
-  // Função para fazer login e salvar dados do usuário
-  async function signIn(userData: UserData) {
-    try {
-      
-      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
-
-      setUser(userData);
-      console.log("Usuário logado e dados salvos com sucesso");
-    } catch (error) {
-      console.error("Erro ao salvar dados do usuário:", error);
-      Alert.alert("Erro", "Não foi possível salvar os dados do usuário");
-    }
-  }
-
-  // Função para fazer logout
-  async function signOut() {
-    try {
-      setIsLoading(true);
-
+  const signIn = useCallback(
+    async (
+      userData: UserData,
+      googleIdToken?: string | null,
+      demoMode = false
+    ) => {
       try {
-        await GoogleSignin.signOut();
-        console.log("Logout do Google realizado com sucesso");
+        if (!demoMode && !googleIdToken) {
+          throw new Error("Google ID Token ausente na autenticação.");
+        }
+
+        const sessionToPersist: StoredSession = {
+          user: userData,
+          isDemo: demoMode,
+        };
+
+        await AsyncStorage.setItem(
+          USER_STORAGE_KEY,
+          JSON.stringify(sessionToPersist)
+        );
+
+        isDemoRef.current = demoMode;
+        if (demoMode) {
+          resetDemoStore(userData.email);
+          setDemoModeActive(true);
+        } else {
+          setDemoModeActive(false);
+        }
+        setIsDemo(demoMode);
+        updateIdToken(demoMode ? null : googleIdToken || null);
+        setUser(userData);
       } catch (error) {
-        console.log("Erro ao fazer logout do Google:", error);
+        console.error("Erro ao salvar dados do usuário:", error);
+        showDialog({
+          variant: "danger",
+          title: "Erro de autenticação",
+          message: "Não foi possível concluir a autenticação.",
+        });
       }
-
-      // Remover dados do AsyncStorage
-      await AsyncStorage.removeItem(USER_STORAGE_KEY);
-
-      setUser(null);
-      console.log("Usuário deslogado com sucesso");
-    } catch (error) {
-      console.error("Erro ao fazer logout:", error);
-      Alert.alert("Erro", "Não foi possível fazer logout corretamente");
-    } finally {
-      setIsLoading(false);
-    }
-  }
+    },
+    [showDialog, updateIdToken]
+  );
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        idToken,
+        isDemo,
+        isLoading,
+        signIn,
+        signOut,
+        refreshIdToken,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
