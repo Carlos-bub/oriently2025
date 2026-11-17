@@ -408,7 +408,98 @@ export const ProgressDotsRow = styled.View`
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-top: 14px;
+  margin-top: 12px;
+  margin-bottom: 18px;
+`;
+
+export const SlidePage = styled.View<{ slideWidth: number }>`
+  width: ${({ slideWidth }: { slideWidth: number }) => slideWidth}px;
+`;
+
+export const MiniScheduleSheet = styled.View`
+  width: 196px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 12px;
+  gap: 8px;
+  shadow-color: #1e355e;
+  shadow-offset: 0px 8px;
+  shadow-opacity: 0.1;
+  shadow-radius: 16px;
+  elevation: 4;
+`;
+
+export const MiniScheduleHeader = styled.View`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+export const MiniScheduleMonth = styled.Text`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Titulos};
+  font-size: 11px;
+  color: #0f1b32;
+`;
+
+export const MiniSlotRow = styled.View`
+  flex-direction: row;
+  gap: 6px;
+`;
+
+export const MiniSlotChip = styled.View<{ active?: boolean }>`
+  flex: 1;
+  height: 28px;
+  border-radius: 8px;
+  background-color: ${({ active }: { active?: boolean }) =>
+    active ? "#005bb1" : "#f1f3ff"};
+  align-items: center;
+  justify-content: center;
+`;
+
+export const MiniSlotChipText = styled.Text<{ active?: boolean }>`
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 10px;
+  color: ${({ active }: { active?: boolean }) =>
+    active ? "#ffffff" : "#414754"};
+`;
+
+export const TimelineSheet = styled.View`
+  width: 210px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 12px 14px;
+  gap: 10px;
+  shadow-color: #1e355e;
+  shadow-offset: 0px 8px;
+  shadow-opacity: 0.1;
+  shadow-radius: 16px;
+  elevation: 4;
+`;
+
+export const TimelineStepRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+`;
+
+export const TimelineStepBadge = styled.View<{
+  tone: "done" | "active" | "next";
+}>`
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  background-color: ${({ tone }: { tone: "done" | "active" | "next" }) =>
+    tone === "done" ? "#d1fae5" : tone === "active" ? "#005bb1" : "#e9edff"};
+  align-items: center;
+  justify-content: center;
+`;
+
+export const TimelineStepLabel = styled.Text<{ muted?: boolean }>`
+  flex: 1;
+  font-family: ${({ theme }: ThemedProps) => theme.fonts.Subtitulos};
+  font-size: 11.5px;
+  color: ${({ muted }: { muted?: boolean }) =>
+    muted ? "#64748b" : "#0f1b32"};
 `;
 
 export const ProgressDotActive = styled.View`
