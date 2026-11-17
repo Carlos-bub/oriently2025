@@ -1,84 +1,75 @@
 import React, { useState, useEffect } from "react";
+import { ActivityIndicator, Alert, useWindowDimensions } from "react-native";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
+import { useTheme } from "styled-components/native";
+
+import { useAuth } from "../../contexts/AuthContext";
 import {
   Container,
-  Logo,
+  ScrollContent,
+  TopSection,
+  BrandHeader,
+  BrandRow,
+  BrandIconBox,
+  BrandName,
+  AcademicPill,
+  AcademicPillText,
+  IllustrationCard,
+  IllustrationLeft,
+  FlowStepRow,
+  FlowDotPrimary,
+  FlowDotLavender,
+  FlowStepText,
+  FlowSubLine,
+  IllustrationBadgeBox,
+  AcademicIcon,
+  CompassCornerBadge,
+  TextBlock,
   Title,
-  Buttons,
-  ButtonText,
+  Subtitle,
+  BottomSection,
+  ActionsStack,
+  GoogleButton,
+  GoogleButtonText,
+  DemoButton,
+  DemoButtonText,
   Icon,
   FooterText,
 } from "./styles";
-import { useNavigation } from "@react-navigation/native";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { Alert } from "react-native";
-import { useAuth } from "../../contexts/AuthContext";
-
-// Tipagem para navegação
-type NavigationProps = {
-  navigate: (screen: string, params?: any) => void;
-  reset: (config: { index: number; routes: { name: string }[] }) => void;
-};
-
-// Interface para o formato da resposta do GoogleSignin
-interface GoogleSignInResponse {
-  type: string;
-  data: {
-    idToken: string;
-    serverAuthCode: string;
-    scopes: string[];
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      photo: string;
-      givenName: string;
-      familyName: string;
-    };
-  };
-}
 
 export function LoginScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const navigation = useNavigation<NavigationProps>();
   const { signIn } = useAuth();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const theme = useTheme();
 
-  // Verificar o status de configuração do GoogleSignin quando o componente for montado
+  const isCompact = width < 360;
+
   useEffect(() => {
     const checkGoogleSigninConfig = async () => {
-      const isConfigured = await GoogleSignin.hasPlayServices({
+      await GoogleSignin.hasPlayServices({
         showPlayServicesUpdateDialog: true,
-      })
-        .then(() => true)
-        .catch((error) => {
-          console.error("Google Play Services não disponível", error);
-          return false;
-        });
-
-      console.log("GoogleSignin configurado:", isConfigured);
+      }).catch((error) => {
+        console.error("Google Play Services não disponível", error);
+      });
     };
 
     checkGoogleSigninConfig();
   }, []);
 
   const handleGoogleSignIn = async () => {
-    console.log("Iniciando login com Google...");
     try {
       setIsSubmitting(true);
 
-      // Verificar se o Google Play Services está disponível
       await GoogleSignin.hasPlayServices({
         showPlayServicesUpdateDialog: true,
       });
-      console.log("Google Play Services disponível");
 
-      // Realizar o login
       const result = await GoogleSignin.signIn();
-      console.log(
-        "Login com Google bem-sucedido - RESPOSTA COMPLETA:",
-        JSON.stringify(result)
-      );
 
-      // Acessando os dados e o Google ID Token (nunca confundir com Access Token)
       let userName = "";
       let userEmail = "";
       let userPhoto = "";
@@ -109,7 +100,6 @@ export function LoginScreen() {
 
         Alert.alert("Sucesso", "Login realizado com sucesso!");
       } else {
-        console.error("Não foi possível obter dados/ID Token do usuário:", result);
         Alert.alert(
           "Erro",
           "Não foi possível validar o token de autenticação do Google."
@@ -118,7 +108,6 @@ export function LoginScreen() {
     } catch (error: any) {
       console.error("Erro no login com Google:", error);
 
-      // Tratar erros específicos do GoogleSignin
       let errorMessage = "Ocorreu um erro ao tentar fazer login";
 
       if (error.code) {
@@ -149,43 +138,115 @@ export function LoginScreen() {
 
   return (
     <Container>
-      <Logo
-        source={require("../../../assets/splash.png")}
-        resizeMode="contain"
-      />
-      <Title>Faça Login para Começar</Title>
-
-      <Buttons
-        bgColor="#dddbdb"
-        onPress={handleGoogleSignIn}
-        disabled={isSubmitting}
-      >
-        <Icon source={require("../../../assets/google.png")} />
-        <ButtonText color="#000">
-          Continuar com Google{isSubmitting ? "..." : ""}
-        </ButtonText>
-      </Buttons>
-
-      <Buttons
-        bgColor="#258BFF"
-        onPress={() => {
-          signIn(
-            {
-              name: "Visitante Demo",
-              email: "teste@example.com",
-              photo: "",
-            },
-            null,
-            true
-          );
+      <ScrollContent
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "space-between",
+          paddingTop: Math.max(insets.top, 16) + 16,
+          paddingBottom: Math.max(insets.bottom, 16) + 16,
+          paddingHorizontal: 24,
         }}
       >
-        <ButtonText color="#ffffff">Entrar no Modo Demo</ButtonText>
-      </Buttons>
+        <TopSection>
+          <BrandHeader>
+            <BrandRow>
+              <BrandIconBox>
+                <Feather
+                  name="compass"
+                  size={18}
+                  color={theme.colors.primary}
+                />
+              </BrandIconBox>
+              <BrandName>Oriently</BrandName>
+            </BrandRow>
 
-      <FooterText>
-        Ao continuar, você aceita nossos Termos & Condições
-      </FooterText>
+            <AcademicPill>
+              <AcademicPillText>Orientação TCC</AcademicPillText>
+            </AcademicPill>
+          </BrandHeader>
+
+          <IllustrationCard>
+            <IllustrationLeft>
+              <FlowStepRow>
+                <FlowDotPrimary />
+                <FlowStepText>Escolha data e horário</FlowStepText>
+              </FlowStepRow>
+              <FlowSubLine />
+              <FlowStepRow>
+                <FlowDotLavender />
+                <FlowStepText>Confirme sua orientação</FlowStepText>
+              </FlowStepRow>
+            </IllustrationLeft>
+
+            <IllustrationBadgeBox>
+              <AcademicIcon name="school-outline" />
+              <CompassCornerBadge>
+                <Feather name="compass" size={14} color="#FFFFFF" />
+              </CompassCornerBadge>
+            </IllustrationBadgeBox>
+          </IllustrationCard>
+
+          <TextBlock>
+            <Title isCompact={isCompact}>Seu TCC, no caminho certo.</Title>
+            <Subtitle>
+              Organize suas orientações, agende reuniões e acompanhe cada etapa.
+            </Subtitle>
+          </TextBlock>
+        </TopSection>
+
+        <BottomSection>
+          <ActionsStack>
+            <GoogleButton
+              activeOpacity={0.85}
+              onPress={handleGoogleSignIn}
+              disabled={isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel="Continuar com Google"
+              accessibilityHint="Autentica com sua conta Google para acessar suas reuniões"
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Icon source={require("../../../assets/google.png")} />
+              )}
+              <GoogleButtonText>
+                {isSubmitting ? "Conectando..." : "Continuar com Google"}
+              </GoogleButtonText>
+            </GoogleButton>
+
+            <DemoButton
+              activeOpacity={0.82}
+              disabled={isSubmitting}
+              onPress={() => {
+                signIn(
+                  {
+                    name: "Visitante Demo",
+                    email: "teste@example.com",
+                    photo: "",
+                  },
+                  null,
+                  true
+                );
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Explorar modo demo"
+              accessibilityHint="Entra no aplicativo em modo de demonstração"
+            >
+              <Feather
+                name="compass"
+                size={16}
+                color={theme.colors.primary_dark}
+              />
+              <DemoButtonText>Explorar modo demo</DemoButtonText>
+            </DemoButton>
+          </ActionsStack>
+
+          <FooterText>
+            Ao continuar, você concorda com os Termos de Uso e Política de
+            Privacidade.
+          </FooterText>
+        </BottomSection>
+      </ScrollContent>
     </Container>
   );
 }

@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from "react";
 import {
   SectionList,
   RefreshControl,
@@ -6,34 +12,13 @@ import {
   Alert as RNAlert,
   Linking,
   AppState,
-  View,
-  Text,
 } from "react-native";
-import {
-  Container,
-  Header,
-  Title,
-  Subtitle,
-  DateBox,
-  DateText,
-  IconBox,
-  ScheduleCard,
-  TimeContainer,
-  FontAwesome,
-  ScheduleTime,
-  ScheduleItem,
-  ScheduleText,
-  Divider,
-  LoadingContainer,
-  EmptyContainer,
-  EmptyText,
-  CancelButton,
-  CancelButtonText,
-  CancelReasonText,
-} from "./styles";
 import { RFValue } from "react-native-responsive-fontsize";
-import theme from "src/global/styles/theme";
+import { useTheme } from "styled-components/native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
+
 import { getFriendlyApiErrorMessage } from "../../services/apiClient";
 import {
   getUserInfo,
@@ -44,14 +29,56 @@ import {
 } from "../../services/calendlyService";
 import { CalendlyEvent } from "../../services/types";
 import { useAuth } from "../../contexts/AuthContext";
+import {
+  Container,
+  Header,
+  HeaderTopRow,
+  HeaderTag,
+  HeaderTagText,
+  RefreshIconButton,
+  Title,
+  Subtitle,
+  SectionHeaderText,
+  ScheduleCard,
+  CardTopRow,
+  DateHighlightBox,
+  DateHighlightDay,
+  DateHighlightMonth,
+  CardDetailsCol,
+  StatusBadge,
+  StatusDot,
+  StatusBadgeText,
+  EventTitle,
+  MetaList,
+  MetaRow,
+  MetaText,
+  CancelReasonText,
+  CancelActionRow,
+  CancelOutlineButton,
+  CancelOutlineText,
+  Divider,
+  WarningBanner,
+  WarningBannerText,
+  LoadingContainer,
+  StateCard,
+  StateTitle,
+  StateDescription,
+  RetryButton,
+  RetryButtonText,
+} from "./styles";
 
 export function Profile() {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [cancelingUri, setCancelingUri] = useState<string | null>(null);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [partialWarning, setPartialWarning] = useState<string | null>(null);
   const pendingExternalRefreshRef = useRef(false);
+
   const [events, setEvents] = useState<{
     activeEvents: CalendlyEvent[];
     pastEvents: CalendlyEvent[];
@@ -61,8 +88,6 @@ export function Profile() {
     pastEvents: [],
     missedEvents: [],
   });
-
-  const { user } = useAuth();
 
   const loadEvents = useCallback(
     async (isRefresh = false) => {
@@ -168,15 +193,15 @@ export function Profile() {
       }
 
       RNAlert.alert(
-        "Cancelar Evento",
-        `Tem certeza que deseja cancelar o evento "${event.name}"?`,
+        "Cancelar reunião",
+        `Tem certeza que deseja cancelar "${event.name}"?`,
         [
           {
-            text: "Não",
+            text: "Manter",
             style: "cancel",
           },
           {
-            text: "Sim",
+            text: "Confirmar cancelamento",
             style: "destructive",
             onPress: async () => {
               setCancelingUri(event.uri);
@@ -184,7 +209,7 @@ export function Profile() {
                 const result = await cancelEvent(event.uri);
                 if (result.success) {
                   await loadEvents(true);
-                  RNAlert.alert("Sucesso", "Evento cancelado com sucesso!");
+                  RNAlert.alert("Sucesso", "Reunião cancelada com sucesso!");
                 } else if (
                   result.code === "SHARED_EVENT_INDIVIDUAL_CANCEL_REQUIRED"
                 ) {
@@ -218,12 +243,12 @@ export function Profile() {
                 } else {
                   RNAlert.alert(
                     "Erro",
-                    result.error || "Não foi possível cancelar o evento."
+                    result.error || "Não foi possível cancelar a reunião."
                   );
                 }
               } catch (error) {
                 console.error("Erro ao cancelar evento:", error);
-                RNAlert.alert("Erro", "Não foi possível cancelar o evento.");
+                RNAlert.alert("Erro", "Não foi possível cancelar a reunião.");
               } finally {
                 setCancelingUri(null);
               }
@@ -241,74 +266,153 @@ export function Profile() {
     }
   };
 
+  const getHighlightedDate = (isoString: string) => {
+    const date = new Date(isoString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = date
+      .toLocaleDateString("pt-BR", { month: "short" })
+      .replace(".", "")
+      .toUpperCase();
+    return { day, month };
+  };
+
+  const formatTimeAndDuration = (startIso: string, endIso?: string) => {
+    const startDate = new Date(startIso);
+    const start = startDate.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    if (!endIso) return start;
+
+    const endDate = new Date(endIso);
+    const end = endDate.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    const durationMin = Math.round(
+      (endDate.getTime() - startDate.getTime()) / 60000
+    );
+
+    return durationMin > 0
+      ? `${start} – ${end} (${durationMin} min)`
+      : `${start} – ${end}`;
+  };
+
+  const getMeetingLocationLabel = (event: CalendlyEvent): string | null => {
+    if (!event.location) return null;
+    if (event.location.location) return event.location.location;
+    if (event.location.type === "google_conference") return "Google Meet";
+    if (event.location.type === "zoom") return "Zoom";
+    if (event.location.type === "microsoft_teams_conference") {
+      return "Microsoft Teams";
+    }
+    if (event.location.join_url) return "Videoconferência";
+    return null;
+  };
+
   const renderEventItem = ({ item }: { item: CalendlyEvent }) => {
     const eventDate = new Date(item.start_time);
     const now = new Date();
 
-    const eventDateOnly = new Date(
-      eventDate.getFullYear(),
-      eventDate.getMonth(),
-      eventDate.getDate()
-    );
-    const todayOnly = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    );
-
-    let effectiveStatus = item.status;
-    if (effectiveStatus === "active" && eventDateOnly < todayOnly) {
-      effectiveStatus = "completed";
+    let variant: "active" | "completed" | "canceled" = "active";
+    if (item.status === "canceled") {
+      variant = "canceled";
+    } else if (eventDate.getTime() < now.getTime()) {
+      variant = "completed";
     }
 
-    // Formatação de data sem usar o locale explicitamente
-    const formattedDate = eventDate.toLocaleDateString("pt-BR");
-    const formattedTime = eventDate.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const statusLabel =
+      variant === "completed"
+        ? "Realizada"
+        : variant === "canceled"
+          ? "Cancelada"
+          : "Confirmada";
 
-    let iconName: "calendar" | "check-circle" | "times-circle" = "calendar";
-    let iconColor = theme.colors.primary;
-    if (effectiveStatus === "completed") {
-      iconName = "check-circle";
-      iconColor = theme.colors.success;
-    } else if (effectiveStatus === "canceled") {
-      iconName = "times-circle";
-      iconColor = theme.colors.cancel;
-    }
+    const isCanceled = variant === "canceled";
+    const { day, month } = getHighlightedDate(item.start_time);
+    const locationLabel = getMeetingLocationLabel(item);
+    const isThisCanceling = cancelingUri === item.uri;
 
     return (
-      <ScheduleCard>
-        <DateBox>
-          <DateText>{formattedDate}</DateText>
-        </DateBox>
-        <TimeContainer>
-          <IconBox>
-            <FontAwesome name={iconName} size={RFValue(24)} color={iconColor} />
-          </IconBox>
-          <ScheduleItem>
-            <ScheduleTime>{formattedTime}</ScheduleTime>
-            <ScheduleText>{item.name}</ScheduleText>
-            {item.cancel_reason && (
-              <CancelReasonText>
-                Motivo do cancelamento: {item.cancel_reason}
-              </CancelReasonText>
-            )}
-          </ScheduleItem>
-          {effectiveStatus === "active" && (
-            <CancelButton
+      <ScheduleCard isCanceled={isCanceled}>
+        <CardTopRow>
+          <DateHighlightBox isCanceled={isCanceled}>
+            <DateHighlightDay isCanceled={isCanceled}>{day}</DateHighlightDay>
+            <DateHighlightMonth isCanceled={isCanceled}>
+              {month}
+            </DateHighlightMonth>
+          </DateHighlightBox>
+
+          <CardDetailsCol>
+            <StatusBadge variant={variant}>
+              <StatusDot variant={variant} />
+              <StatusBadgeText variant={variant}>{statusLabel}</StatusBadgeText>
+            </StatusBadge>
+
+            <EventTitle isCanceled={isCanceled} numberOfLines={2}>
+              {item.name}
+            </EventTitle>
+
+            <MetaList>
+              <MetaRow>
+                <Feather
+                  name="clock"
+                  size={12}
+                  color={theme.colors.text_secondary}
+                />
+                <MetaText>
+                  {formatTimeAndDuration(item.start_time, item.end_time)}
+                </MetaText>
+              </MetaRow>
+
+              {locationLabel && (
+                <MetaRow>
+                  <Feather
+                    name="map-pin"
+                    size={12}
+                    color={
+                      isCanceled
+                        ? theme.colors.text_secondary
+                        : theme.colors.lavender
+                    }
+                  />
+                  <MetaText numberOfLines={1}>{locationLabel}</MetaText>
+                </MetaRow>
+              )}
+
+              {item.cancel_reason && (
+                <CancelReasonText>
+                  Motivo: {item.cancel_reason}
+                </CancelReasonText>
+              )}
+            </MetaList>
+          </CardDetailsCol>
+        </CardTopRow>
+
+        {variant === "active" && (
+          <CancelActionRow>
+            <CancelOutlineButton
+              activeOpacity={0.78}
               onPress={() => handleCancelEvent(item)}
               disabled={cancelingUri !== null}
+              accessibilityRole="button"
+              accessibilityLabel={`Cancelar reunião ${item.name}`}
             >
-              {cancelingUri === item.uri ? (
-                <ActivityIndicator size="small" color="#fff" />
+              {isThisCanceling ? (
+                <ActivityIndicator size="small" color="#DC2626" />
               ) : (
-                <CancelButtonText>Cancelar</CancelButtonText>
+                <>
+                  <Feather name="x-circle" size={14} color="#DC2626" />
+                  <CancelOutlineText>Cancelar reunião</CancelOutlineText>
+                </>
               )}
-            </CancelButton>
-          )}
-        </TimeContainer>
+            </CancelOutlineButton>
+          </CancelActionRow>
+        )}
       </ScheduleCard>
     );
   };
@@ -316,16 +420,13 @@ export function Profile() {
   const sections = useMemo(() => {
     const list: { title: string; data: CalendlyEvent[] }[] = [];
     if (events.activeEvents.length > 0) {
-      list.push({ title: "Agendamentos Ativos", data: events.activeEvents });
+      list.push({ title: "Próximas orientações", data: events.activeEvents });
     }
     if (events.pastEvents.length > 0) {
-      list.push({ title: "Agendamentos Realizados", data: events.pastEvents });
+      list.push({ title: "Realizadas", data: events.pastEvents });
     }
     if (events.missedEvents.length > 0) {
-      list.push({
-        title: "Agendamentos Cancelados",
-        data: events.missedEvents,
-      });
+      list.push({ title: "Canceladas", data: events.missedEvents });
     }
     return list;
   }, [events]);
@@ -335,7 +436,7 @@ export function Profile() {
     !events.pastEvents.length &&
     !events.missedEvents.length;
 
-  if (loading && hasNoEvents) {
+  if (loading && hasNoEvents && !eventsError) {
     return (
       <LoadingContainer>
         <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -345,8 +446,36 @@ export function Profile() {
 
   return (
     <Container>
-      <Header>
-        <Title>Meus Agendamentos</Title>
+      <Header topInset={insets.top}>
+        <HeaderTopRow>
+          <HeaderTag>
+            <Feather
+              name="compass"
+              size={11}
+              color={theme.colors.primary_dark}
+            />
+            <HeaderTagText>Orientação TCC</HeaderTagText>
+          </HeaderTag>
+
+          <RefreshIconButton
+            onPress={() => loadEvents(true)}
+            disabled={loading || refreshing}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Atualizar agendamentos"
+          >
+            <Feather
+              name="refresh-cw"
+              size={15}
+              color={theme.colors.primary_dark}
+            />
+          </RefreshIconButton>
+        </HeaderTopRow>
+
+        <Title>Meus agendamentos</Title>
+        <Subtitle>
+          Acompanhe suas próximas orientações e seu histórico.
+        </Subtitle>
       </Header>
 
       <SectionList
@@ -354,13 +483,15 @@ export function Profile() {
         keyExtractor={(item) => item.uri}
         renderItem={renderEventItem}
         renderSectionHeader={({ section: { title } }) => (
-          <Subtitle>{title}</Subtitle>
+          <SectionHeaderText>{title}</SectionHeaderText>
         )}
         ItemSeparatorComponent={() => <Divider />}
         contentContainerStyle={{
-          paddingBottom: RFValue(90),
+          paddingHorizontal: 20,
+          paddingBottom: Math.max(insets.bottom, 16) + 84,
           flexGrow: hasNoEvents ? 1 : 0,
         }}
+        stickySectionHeadersEnabled={false}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -371,44 +502,52 @@ export function Profile() {
         }
         ListHeaderComponent={
           partialWarning && !hasNoEvents ? (
-            <View
-              style={{
-                backgroundColor: theme.colors.boxprofile,
-                borderRadius: 12,
-                padding: 10,
-                marginBottom: 12,
-              }}
-            >
-              <Text
-                style={{
-                  color: theme.colors.date,
-                  fontSize: RFValue(12),
-                }}
-              >
-                {partialWarning}
-              </Text>
-            </View>
+            <WarningBanner>
+              <Feather
+                name="info"
+                size={15}
+                color={theme.colors.primary_dark}
+              />
+              <WarningBannerText>{partialWarning}</WarningBannerText>
+            </WarningBanner>
           ) : null
         }
         ListEmptyComponent={
-          <EmptyContainer>
-            <EmptyText>
+          <StateCard>
+            <Feather
+              name={eventsError ? "alert-circle" : partialWarning ? "info" : "calendar"}
+              size={24}
+              color={
+                eventsError
+                  ? "#DC2626"
+                  : partialWarning
+                    ? theme.colors.primary_dark
+                    : theme.colors.primary
+              }
+            />
+            <StateTitle>
+              {eventsError
+                ? "Não foi possível carregar"
+                : partialWarning
+                  ? "Agenda carregada parcialmente"
+                  : "Nenhum agendamento encontrado"}
+            </StateTitle>
+            <StateDescription>
               {eventsError ||
                 partialWarning ||
-                "Nenhum agendamento encontrado."}
-            </EmptyText>
+                "Suas futuras orientações, reuniões realizadas e canceladas aparecerão aqui."}
+            </StateDescription>
             {(eventsError || partialWarning) && (
-              <CancelButton
+              <RetryButton
+                activeOpacity={0.85}
                 onPress={() => loadEvents(true)}
-                style={{
-                  backgroundColor: theme.colors.primary,
-                  marginTop: RFValue(12),
-                }}
+                accessibilityRole="button"
+                accessibilityLabel="Tentar novamente"
               >
-                <CancelButtonText>Tentar novamente</CancelButtonText>
-              </CancelButton>
+                <RetryButtonText>Tentar novamente</RetryButtonText>
+              </RetryButton>
             )}
-          </EmptyContainer>
+          </StateCard>
         }
       />
     </Container>
