@@ -9,27 +9,31 @@ import { useAuth } from "../../contexts/AuthContext";
 import {
   Container,
   ScrollContent,
-  TopSection,
-  BrandHeader,
+  MainColumn,
   BrandRow,
   BrandIconBox,
   BrandName,
-  AcademicPill,
-  AcademicPillText,
-  IllustrationCard,
-  IllustrationLeft,
-  FlowStepRow,
-  FlowDotPrimary,
-  FlowDotLavender,
-  FlowStepText,
-  FlowSubLine,
-  IllustrationBadgeBox,
-  AcademicIcon,
-  CompassCornerBadge,
+  HeroComposition,
+  HeroBackdropHalo,
+  OrbitDotBlue,
+  OrbitDotLavender,
+  FloatingCalendarCard,
+  FloatingCalendarHeader,
+  CalendarRingDot,
+  FloatingCalendarGrid,
+  GridRow,
+  GridCell,
+  FloatingProgressCard,
+  ProgressCardHeader,
+  ProgressPill,
+  ProgressPillText,
+  AcademicIconSmall,
+  SkeletonLineShort,
+  SkeletonLineLong,
+  CenterCompassBadge,
   TextBlock,
   Title,
   Subtitle,
-  BottomSection,
   ActionsStack,
   GoogleButton,
   GoogleButtonText,
@@ -141,50 +145,59 @@ export function LoginScreen() {
       <ScrollContent
         contentContainerStyle={{
           flexGrow: 1,
-          justifyContent: "space-between",
-          paddingTop: Math.max(insets.top, 16) + 16,
-          paddingBottom: Math.max(insets.bottom, 16) + 16,
+          justifyContent: "center",
+          paddingTop: Math.max(insets.top, 16) + 12,
+          paddingBottom: Math.max(insets.bottom, 16) + 12,
           paddingHorizontal: 24,
         }}
       >
-        <TopSection>
-          <BrandHeader>
-            <BrandRow>
-              <BrandIconBox>
-                <Feather
-                  name="compass"
-                  size={18}
-                  color={theme.colors.primary}
-                />
-              </BrandIconBox>
-              <BrandName>Oriently</BrandName>
-            </BrandRow>
+        <MainColumn>
+          <BrandRow>
+            <BrandIconBox>
+              <Feather name="compass" size={17} color={theme.colors.primary} />
+            </BrandIconBox>
+            <BrandName>Oriently</BrandName>
+          </BrandRow>
 
-            <AcademicPill>
-              <AcademicPillText>Orientação TCC</AcademicPillText>
-            </AcademicPill>
-          </BrandHeader>
+          <HeroComposition accessible={false}>
+            <HeroBackdropHalo />
+            <OrbitDotBlue />
+            <OrbitDotLavender />
 
-          <IllustrationCard>
-            <IllustrationLeft>
-              <FlowStepRow>
-                <FlowDotPrimary />
-                <FlowStepText>Escolha data e horário</FlowStepText>
-              </FlowStepRow>
-              <FlowSubLine />
-              <FlowStepRow>
-                <FlowDotLavender />
-                <FlowStepText>Confirme sua orientação</FlowStepText>
-              </FlowStepRow>
-            </IllustrationLeft>
+            <FloatingCalendarCard>
+              <FloatingCalendarHeader>
+                <CalendarRingDot />
+                <CalendarRingDot />
+              </FloatingCalendarHeader>
+              <FloatingCalendarGrid>
+                <GridRow>
+                  <GridCell />
+                  <GridCell active />
+                  <GridCell />
+                </GridRow>
+                <GridRow>
+                  <GridCell />
+                  <GridCell />
+                  <GridCell />
+                </GridRow>
+              </FloatingCalendarGrid>
+            </FloatingCalendarCard>
 
-            <IllustrationBadgeBox>
-              <AcademicIcon name="school-outline" />
-              <CompassCornerBadge>
-                <Feather name="compass" size={14} color="#FFFFFF" />
-              </CompassCornerBadge>
-            </IllustrationBadgeBox>
-          </IllustrationCard>
+            <FloatingProgressCard>
+              <ProgressCardHeader>
+                <ProgressPill>
+                  <ProgressPillText>TCC</ProgressPillText>
+                </ProgressPill>
+                <AcademicIconSmall name="school-outline" />
+              </ProgressCardHeader>
+              <SkeletonLineShort />
+              <SkeletonLineLong />
+            </FloatingProgressCard>
+
+            <CenterCompassBadge>
+              <Feather name="compass" size={17} color="#FFFFFF" />
+            </CenterCompassBadge>
+          </HeroComposition>
 
           <TextBlock>
             <Title isCompact={isCompact}>Seu TCC, no caminho certo.</Title>
@@ -192,9 +205,7 @@ export function LoginScreen() {
               Organize suas orientações, agende reuniões e acompanhe cada etapa.
             </Subtitle>
           </TextBlock>
-        </TopSection>
 
-        <BottomSection>
           <ActionsStack>
             <GoogleButton
               activeOpacity={0.85}
@@ -234,7 +245,7 @@ export function LoginScreen() {
             >
               <Feather
                 name="compass"
-                size={16}
+                size={15}
                 color={theme.colors.primary_dark}
               />
               <DemoButtonText>Explorar modo demo</DemoButtonText>
@@ -245,7 +256,7 @@ export function LoginScreen() {
             Ao continuar, você concorda com os Termos de Uso e Política de
             Privacidade.
           </FooterText>
-        </BottomSection>
+        </MainColumn>
       </ScrollContent>
     </Container>
   );

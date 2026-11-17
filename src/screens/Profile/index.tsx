@@ -13,7 +13,6 @@ import {
   Linking,
   AppState,
 } from "react-native";
-import { RFValue } from "react-native-responsive-fontsize";
 import { useTheme } from "styled-components/native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -38,24 +37,26 @@ import {
   RefreshIconButton,
   Title,
   Subtitle,
+  SectionHeaderRow,
+  SectionDot,
   SectionHeaderText,
   ScheduleCard,
-  CardTopRow,
+  CardRow,
   DateHighlightBox,
   DateHighlightDay,
   DateHighlightMonth,
   CardDetailsCol,
+  CardHeaderInline,
   StatusBadge,
   StatusDot,
   StatusBadgeText,
+  CompactCancelButton,
+  CompactCancelText,
   EventTitle,
-  MetaList,
   MetaRow,
+  MetaItem,
   MetaText,
   CancelReasonText,
-  CancelActionRow,
-  CancelOutlineButton,
-  CancelOutlineText,
   Divider,
   WarningBanner,
   WarningBannerText,
@@ -333,13 +334,14 @@ export function Profile() {
           : "Confirmada";
 
     const isCanceled = variant === "canceled";
+    const isUpcoming = variant === "active";
     const { day, month } = getHighlightedDate(item.start_time);
     const locationLabel = getMeetingLocationLabel(item);
     const isThisCanceling = cancelingUri === item.uri;
 
     return (
-      <ScheduleCard isCanceled={isCanceled}>
-        <CardTopRow>
+      <ScheduleCard isCanceled={isCanceled} isUpcoming={isUpcoming}>
+        <CardRow>
           <DateHighlightBox isCanceled={isCanceled}>
             <DateHighlightDay isCanceled={isCanceled}>{day}</DateHighlightDay>
             <DateHighlightMonth isCanceled={isCanceled}>
@@ -348,17 +350,48 @@ export function Profile() {
           </DateHighlightBox>
 
           <CardDetailsCol>
-            <StatusBadge variant={variant}>
-              <StatusDot variant={variant} />
-              <StatusBadgeText variant={variant}>{statusLabel}</StatusBadgeText>
-            </StatusBadge>
+            <CardHeaderInline>
+              <StatusBadge variant={variant}>
+                <StatusDot variant={variant} />
+                <StatusBadgeText variant={variant}>
+                  {statusLabel}
+                </StatusBadgeText>
+              </StatusBadge>
+
+              {isUpcoming && (
+                <CompactCancelButton
+                  activeOpacity={0.75}
+                  onPress={() => handleCancelEvent(item)}
+                  disabled={cancelingUri !== null}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Cancelar reunião ${item.name}`}
+                >
+                  {isThisCanceling ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={theme.colors.text_secondary}
+                    />
+                  ) : (
+                    <>
+                      <Feather
+                        name="x"
+                        size={12}
+                        color={theme.colors.text_secondary}
+                      />
+                      <CompactCancelText>Cancelar</CompactCancelText>
+                    </>
+                  )}
+                </CompactCancelButton>
+              )}
+            </CardHeaderInline>
 
             <EventTitle isCanceled={isCanceled} numberOfLines={2}>
               {item.name}
             </EventTitle>
 
-            <MetaList>
-              <MetaRow>
+            <MetaRow>
+              <MetaItem>
                 <Feather
                   name="clock"
                   size={12}
@@ -367,10 +400,10 @@ export function Profile() {
                 <MetaText>
                   {formatTimeAndDuration(item.start_time, item.end_time)}
                 </MetaText>
-              </MetaRow>
+              </MetaItem>
 
               {locationLabel && (
-                <MetaRow>
+                <MetaItem>
                   <Feather
                     name="map-pin"
                     size={12}
@@ -381,46 +414,33 @@ export function Profile() {
                     }
                   />
                   <MetaText numberOfLines={1}>{locationLabel}</MetaText>
-                </MetaRow>
+                </MetaItem>
               )}
+            </MetaRow>
 
-              {item.cancel_reason && (
-                <CancelReasonText>
-                  Motivo: {item.cancel_reason}
-                </CancelReasonText>
-              )}
-            </MetaList>
+            {item.cancel_reason && (
+              <CancelReasonText numberOfLines={2}>
+                Motivo: {item.cancel_reason}
+              </CancelReasonText>
+            )}
           </CardDetailsCol>
-        </CardTopRow>
-
-        {variant === "active" && (
-          <CancelActionRow>
-            <CancelOutlineButton
-              activeOpacity={0.78}
-              onPress={() => handleCancelEvent(item)}
-              disabled={cancelingUri !== null}
-              accessibilityRole="button"
-              accessibilityLabel={`Cancelar reunião ${item.name}`}
-            >
-              {isThisCanceling ? (
-                <ActivityIndicator size="small" color="#DC2626" />
-              ) : (
-                <>
-                  <Feather name="x-circle" size={14} color="#DC2626" />
-                  <CancelOutlineText>Cancelar reunião</CancelOutlineText>
-                </>
-              )}
-            </CancelOutlineButton>
-          </CancelActionRow>
-        )}
+        </CardRow>
       </ScheduleCard>
     );
   };
 
   const sections = useMemo(() => {
-    const list: { title: string; data: CalendlyEvent[] }[] = [];
+    const list: {
+      title: string;
+      isUpcoming?: boolean;
+      data: CalendlyEvent[];
+    }[] = [];
     if (events.activeEvents.length > 0) {
-      list.push({ title: "Próximas orientações", data: events.activeEvents });
+      list.push({
+        title: "Próximas orientações",
+        isUpcoming: true,
+        data: events.activeEvents,
+      });
     }
     if (events.pastEvents.length > 0) {
       list.push({ title: "Realizadas", data: events.pastEvents });
@@ -482,8 +502,13 @@ export function Profile() {
         sections={sections}
         keyExtractor={(item) => item.uri}
         renderItem={renderEventItem}
-        renderSectionHeader={({ section: { title } }) => (
-          <SectionHeaderText>{title}</SectionHeaderText>
+        renderSectionHeader={({ section }) => (
+          <SectionHeaderRow>
+            <SectionDot isUpcoming={section.isUpcoming} />
+            <SectionHeaderText isUpcoming={section.isUpcoming}>
+              {section.title}
+            </SectionHeaderText>
+          </SectionHeaderRow>
         )}
         ItemSeparatorComponent={() => <Divider />}
         contentContainerStyle={{
@@ -515,8 +540,14 @@ export function Profile() {
         ListEmptyComponent={
           <StateCard>
             <Feather
-              name={eventsError ? "alert-circle" : partialWarning ? "info" : "calendar"}
-              size={24}
+              name={
+                eventsError
+                  ? "alert-circle"
+                  : partialWarning
+                    ? "info"
+                    : "calendar"
+              }
+              size={22}
               color={
                 eventsError
                   ? "#DC2626"
