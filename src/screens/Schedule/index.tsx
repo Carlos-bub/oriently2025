@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Modal,
   useWindowDimensions,
 } from "react-native";
@@ -58,14 +59,21 @@ import {
   RetryButtonText,
   ModalOverlay,
   ModalContent,
+  ModalScroll,
+  ConfirmIconBadge,
   ModalTitle,
   ModalText,
-  ModalSummaryPill,
-  ModalSummaryText,
+  ModalDetailsCard,
+  ModalDetailTitle,
+  ModalDetailRow,
+  ModalDetailText,
   ModalButtonContainer,
   ModalButton,
   ModalButtonText,
   SuccessIconBadge,
+  SuccessStatusPill,
+  SuccessStatusDot,
+  SuccessStatusText,
   SuccessDetailsCard,
   SuccessEventTitle,
   SuccessDetailRow,
@@ -105,7 +113,31 @@ export function Schedule() {
     useState<BookingDetails | null>(null);
 
   const submittingRef = useRef(false);
+  const successScale = useRef(new Animated.Value(0.8)).current;
+  const successOpacity = useRef(new Animated.Value(0)).current;
   const isFocused = useIsFocused();
+
+  const selectedEventType = eventTypes.find((t) => t.uri === eventTypeUri);
+
+  useEffect(() => {
+    if (confirmedBooking) {
+      successScale.setValue(0.8);
+      successOpacity.setValue(0);
+      Animated.parallel([
+        Animated.spring(successScale, {
+          toValue: 1,
+          friction: 6,
+          tension: 90,
+          useNativeDriver: true,
+        }),
+        Animated.timing(successOpacity, {
+          toValue: 1,
+          duration: 220,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [confirmedBooking, successScale, successOpacity]);
 
   // 3 colunas em telas normais; 2 colunas em dispositivos muito estreitos (< 340px)
   const gridColumns = width < 340 ? 2 : 3;
@@ -330,9 +362,17 @@ export function Schedule() {
   };
 
   const formatBookingTimeRange = (startIso: string, endIso?: string) => {
+    const startDate = new Date(startIso);
     const start = formatHourLabel(startIso);
     if (!endIso) return start;
-    return `${start} – ${formatHourLabel(endIso)}`;
+    const endDate = new Date(endIso);
+    const end = formatHourLabel(endIso);
+    const durationMin = Math.round(
+      (endDate.getTime() - startDate.getTime()) / 60000
+    );
+    return durationMin > 0
+      ? `${start} – ${end} (${durationMin} min)`
+      : `${start} – ${end}`;
   };
 
   const handleGoToAgenda = () => {
@@ -571,49 +611,86 @@ export function Schedule() {
           if (!submitting) setShowConfirmationModal(false);
         }}
       >
-        <ModalOverlay>
+        <ModalOverlay topInset={insets.top} bottomInset={insets.bottom}>
           <ModalContent>
-            <ModalTitle>Confirmar orientação</ModalTitle>
-            <ModalText>
-              Você selecionou o seguinte horário para sua reunião de TCC:
-            </ModalText>
+            <ModalScroll>
+              <ConfirmIconBadge>
+                <Feather
+                  name="calendar"
+                  size={20}
+                  color={theme.colors.primary}
+                />
+              </ConfirmIconBadge>
 
-            <ModalSummaryPill>
-              <Feather
-                name="calendar"
-                size={15}
-                color={theme.colors.primary_dark}
-              />
-              <ModalSummaryText>
-                {selectedDate &&
-                  format(
-                    new Date(`${selectedDate}T00:00:00`),
-                    "dd/MM/yyyy"
-                  )}{" "}
-                às {selectedHour ? formatHourLabel(selectedHour) : ""}
-              </ModalSummaryText>
-            </ModalSummaryPill>
+              <ModalTitle>Confirmar orientação</ModalTitle>
+              <ModalText>Revise os detalhes antes de confirmar.</ModalText>
 
-            <ModalButtonContainer>
-              <ModalButton
-                onPress={() => setShowConfirmationModal(false)}
-                disabled={submitting}
-              >
-                <ModalButtonText>Cancelar</ModalButtonText>
-              </ModalButton>
-
-              <ModalButton
-                isConfirm
-                onPress={handleConfirm}
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <ModalButtonText isConfirm>Confirmar</ModalButtonText>
+              <ModalDetailsCard>
+                {selectedEventType && (
+                  <ModalDetailTitle numberOfLines={2}>
+                    {selectedEventType.name}
+                    {selectedEventType.duration
+                      ? ` (${selectedEventType.duration} min)`
+                      : ""}
+                  </ModalDetailTitle>
                 )}
-              </ModalButton>
-            </ModalButtonContainer>
+
+                <ModalDetailRow>
+                  <Feather
+                    name="calendar"
+                    size={14}
+                    color={theme.colors.primary_dark}
+                  />
+                  <ModalDetailText>
+                    {selectedDate &&
+                      format(
+                        new Date(`${selectedDate}T00:00:00`),
+                        "dd/MM/yyyy"
+                      )}
+                  </ModalDetailText>
+                </ModalDetailRow>
+
+                <ModalDetailRow>
+                  <Feather
+                    name="clock"
+                    size={14}
+                    color={theme.colors.lavender}
+                  />
+                  <ModalDetailText>
+                    {selectedHour ? formatHourLabel(selectedHour) : ""}
+                  </ModalDetailText>
+                </ModalDetailRow>
+              </ModalDetailsCard>
+
+              <ModalButtonContainer>
+                <ModalButton
+                  onPress={() => setShowConfirmationModal(false)}
+                  disabled={submitting}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Voltar"
+                >
+                  <ModalButtonText>Voltar</ModalButtonText>
+                </ModalButton>
+
+                <ModalButton
+                  isConfirm
+                  onPress={handleConfirm}
+                  disabled={submitting}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Confirmar reunião"
+                >
+                  {submitting ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <ModalButtonText isConfirm>
+                      Confirmar reunião
+                    </ModalButtonText>
+                  )}
+                </ModalButton>
+              </ModalButtonContainer>
+            </ModalScroll>
           </ModalContent>
         </ModalOverlay>
       </Modal>
@@ -625,90 +702,100 @@ export function Schedule() {
         animationType="fade"
         onRequestClose={handleGoToAgenda}
       >
-        <ModalOverlay>
+        <ModalOverlay topInset={insets.top} bottomInset={insets.bottom}>
           <ModalContent>
-            <SuccessIconBadge>
-              <Feather
-                name="check-circle"
-                size={28}
-                color={theme.colors.success}
-              />
-            </SuccessIconBadge>
+            <ModalScroll>
+              <Animated.View
+                style={{
+                  transform: [{ scale: successScale }],
+                  opacity: successOpacity,
+                }}
+              >
+                <SuccessIconBadge>
+                  <Feather name="check-circle" size={26} color="#15803D" />
+                </SuccessIconBadge>
+              </Animated.View>
 
-            <ModalTitle>Reunião agendada!</ModalTitle>
-            <ModalText>
-              Sua orientação de TCC foi confirmada com sucesso.
-            </ModalText>
+              <SuccessStatusPill>
+                <SuccessStatusDot />
+                <SuccessStatusText>Confirmada</SuccessStatusText>
+              </SuccessStatusPill>
 
-            {confirmedBooking && (
-              <SuccessDetailsCard>
-                <SuccessEventTitle numberOfLines={2}>
-                  {confirmedBooking.eventName}
-                </SuccessEventTitle>
+              <ModalTitle>Reunião agendada!</ModalTitle>
+              <ModalText>
+                Sua orientação foi confirmada com sucesso.
+              </ModalText>
 
-                <SuccessDetailRow>
-                  <Feather
-                    name="calendar"
-                    size={14}
-                    color={theme.colors.primary_dark}
-                  />
-                  <SuccessDetailText>
-                    {formatBookingDate(confirmedBooking.startTime)}
-                  </SuccessDetailText>
-                </SuccessDetailRow>
+              {confirmedBooking && (
+                <SuccessDetailsCard>
+                  <SuccessEventTitle numberOfLines={2}>
+                    {confirmedBooking.eventName}
+                  </SuccessEventTitle>
 
-                <SuccessDetailRow>
-                  <Feather
-                    name="clock"
-                    size={14}
-                    color={theme.colors.primary_dark}
-                  />
-                  <SuccessDetailText>
-                    {formatBookingTimeRange(
-                      confirmedBooking.startTime,
-                      confirmedBooking.endTime
-                    )}
-                  </SuccessDetailText>
-                </SuccessDetailRow>
-
-                {confirmedBooking.locationLabel && (
                   <SuccessDetailRow>
                     <Feather
-                      name="map-pin"
+                      name="calendar"
                       size={14}
-                      color={theme.colors.lavender}
+                      color={theme.colors.primary_dark}
                     />
-                    <SuccessDetailText numberOfLines={1}>
-                      {confirmedBooking.locationLabel}
+                    <SuccessDetailText>
+                      {formatBookingDate(confirmedBooking.startTime)}
                     </SuccessDetailText>
                   </SuccessDetailRow>
-                )}
-              </SuccessDetailsCard>
-            )}
 
-            <SuccessButtonsStack>
-              <SuccessPrimaryButton
-                activeOpacity={0.85}
-                onPress={handleGoToAgenda}
-                accessibilityRole="button"
-                accessibilityLabel="Ver meus agendamentos"
-              >
-                <SuccessPrimaryButtonText>
-                  Ver meus agendamentos
-                </SuccessPrimaryButtonText>
-              </SuccessPrimaryButton>
+                  <SuccessDetailRow>
+                    <Feather
+                      name="clock"
+                      size={14}
+                      color={theme.colors.primary_dark}
+                    />
+                    <SuccessDetailText>
+                      {formatBookingTimeRange(
+                        confirmedBooking.startTime,
+                        confirmedBooking.endTime
+                      )}
+                    </SuccessDetailText>
+                  </SuccessDetailRow>
 
-              <SuccessSecondaryButton
-                activeOpacity={0.85}
-                onPress={handleGoHome}
-                accessibilityRole="button"
-                accessibilityLabel="Voltar ao início"
-              >
-                <SuccessSecondaryButtonText>
-                  Voltar ao início
-                </SuccessSecondaryButtonText>
-              </SuccessSecondaryButton>
-            </SuccessButtonsStack>
+                  {confirmedBooking.locationLabel && (
+                    <SuccessDetailRow>
+                      <Feather
+                        name="map-pin"
+                        size={14}
+                        color={theme.colors.lavender}
+                      />
+                      <SuccessDetailText numberOfLines={1}>
+                        {confirmedBooking.locationLabel}
+                      </SuccessDetailText>
+                    </SuccessDetailRow>
+                  )}
+                </SuccessDetailsCard>
+              )}
+
+              <SuccessButtonsStack>
+                <SuccessPrimaryButton
+                  activeOpacity={0.85}
+                  onPress={handleGoToAgenda}
+                  accessibilityRole="button"
+                  accessibilityLabel="Ver meus agendamentos"
+                >
+                  <SuccessPrimaryButtonText>
+                    Ver meus agendamentos
+                  </SuccessPrimaryButtonText>
+                </SuccessPrimaryButton>
+
+                <SuccessSecondaryButton
+                  activeOpacity={0.85}
+                  onPress={handleGoHome}
+                  accessibilityRole="button"
+                  accessibilityLabel="Voltar ao início"
+                >
+                  <SuccessSecondaryButtonText>
+                    Voltar ao início
+                  </SuccessSecondaryButtonText>
+                </SuccessSecondaryButton>
+              </SuccessButtonsStack>
+            </ModalScroll>
           </ModalContent>
         </ModalOverlay>
       </Modal>

@@ -271,23 +271,60 @@ export const RetryButtonText = styled.Text`
 `;
 
 /* ── Confirmation Modal ── */
-export const ModalOverlay = styled.View`
+export const ModalOverlay = styled.View<{
+  topInset?: number;
+  bottomInset?: number;
+}>`
   flex: 1;
   justify-content: center;
   align-items: center;
   background-color: rgba(23, 43, 77, 0.45);
-  padding: 20px;
+  padding-top: ${(props: { topInset?: number }) =>
+    Math.max(props.topInset || 0, 20)}px;
+  padding-bottom: ${(props: { bottomInset?: number }) =>
+    Math.max(props.bottomInset || 0, 20)}px;
+  padding-horizontal: 20px;
 `;
 
 export const ModalContent = styled.View`
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.background};
-  padding: 22px 20px;
+  padding: 20px;
   border-radius: 22px;
   align-items: center;
   width: 100%;
-  max-width: 340px;
-  elevation: 6;
+  max-width: 348px;
+  max-height: 90%;
+  border-width: 1px;
+  border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
+  elevation: 8;
+  shadow-color: #172b4d;
+  shadow-offset: 0px 8px;
+  shadow-opacity: 0.16;
+  shadow-radius: 16px;
+`;
+
+export const ModalScroll = styled.ScrollView.attrs({
+  showsVerticalScrollIndicator: false,
+  bounces: false,
+  contentContainerStyle: {
+    alignItems: "center",
+  },
+})`
+  width: 100%;
+`;
+
+export const ConfirmIconBadge = styled.View`
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.boxprofile};
+  border-width: 1px;
+  border-color: #dce8fd;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
 `;
 
 export const ModalTitle = styled.Text`
@@ -295,38 +332,52 @@ export const ModalTitle = styled.Text`
     props.theme.colors.text_primary};
   font-size: ${RFValue(17)}px;
   font-family: ${theme.fonts.Titulos};
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   text-align: center;
 `;
 
 export const ModalText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.text_secondary};
-  font-size: ${RFValue(13)}px;
+  font-size: ${RFValue(12.5)}px;
   font-family: ${theme.fonts.Subtituloslight};
   margin-bottom: 14px;
   text-align: center;
-  line-height: ${RFValue(19)}px;
+  line-height: ${RFValue(18)}px;
 `;
 
-export const ModalSummaryPill = styled.View`
+export const ModalDetailsCard = styled.View`
+  width: 100%;
   background-color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.surface};
   border-width: 1px;
   border-color: ${(props: { theme: DefaultTheme }) => props.theme.colors.border};
-  border-radius: 14px;
-  padding: 10px 16px;
-  margin-bottom: 18px;
+  border-radius: 16px;
+  padding: 13px 14px;
+  gap: 8px;
+  margin-bottom: 16px;
+`;
+
+export const ModalDetailTitle = styled.Text`
+  color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.text_primary};
+  font-family: ${theme.fonts.Subtitulos};
+  font-size: ${RFValue(13.5)}px;
+  margin-bottom: 2px;
+`;
+
+export const ModalDetailRow = styled.View`
   flex-direction: row;
   align-items: center;
   gap: 8px;
 `;
 
-export const ModalSummaryText = styled.Text`
+export const ModalDetailText = styled.Text`
   color: ${(props: { theme: DefaultTheme }) =>
     props.theme.colors.primary_dark};
   font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(14)}px;
+  font-size: ${RFValue(12.5)}px;
+  flex: 1;
 `;
 
 export const ModalButtonContainer = styled.View`
@@ -336,8 +387,10 @@ export const ModalButtonContainer = styled.View`
 `;
 
 export const ModalButton = styled.TouchableOpacity<{ isConfirm?: boolean }>`
-  flex: 1;
-  padding-vertical: 12px;
+  flex: ${(props: { isConfirm?: boolean }) => (props.isConfirm ? 1.35 : 1)};
+  min-height: 44px;
+  padding-vertical: 11px;
+  padding-horizontal: 12px;
   background-color: ${(props: { theme: DefaultTheme; isConfirm?: boolean }) =>
     props.isConfirm ? props.theme.colors.primary : props.theme.colors.surface};
   border-width: ${(props: { isConfirm?: boolean }) =>
@@ -354,18 +407,46 @@ export const ModalButtonText = styled.Text<{ isConfirm?: boolean }>`
       ? props.theme.colors.background
       : props.theme.colors.text_secondary};
   font-family: ${theme.fonts.Subtitulos};
-  font-size: ${RFValue(13.5)}px;
+  font-size: ${RFValue(13)}px;
+  text-align: center;
 `;
 
 /* ── Success Modal ── */
 export const SuccessIconBadge = styled.View`
-  width: 56px;
-  height: 56px;
-  border-radius: 28px;
+  width: 54px;
+  height: 54px;
+  border-radius: 27px;
   background-color: #e6f6ec;
+  border-width: 1.5px;
+  border-color: #bbf7d0;
   align-items: center;
   justify-content: center;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
+`;
+
+export const SuccessStatusPill = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  background-color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.boxprofile};
+  padding: 3px 10px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+`;
+
+export const SuccessStatusDot = styled.View`
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background-color: #15803d;
+`;
+
+export const SuccessStatusText = styled.Text`
+  color: ${(props: { theme: DefaultTheme }) =>
+    props.theme.colors.primary_dark};
+  font-family: ${theme.fonts.buttons};
+  font-size: ${RFValue(10)}px;
 `;
 
 export const SuccessDetailsCard = styled.View`
