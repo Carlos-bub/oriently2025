@@ -395,10 +395,12 @@ export function Home() {
 
         <MeetingCard
           activeOpacity={0.85}
-          onPress={() => navigation.navigate("Profile")}
+          onPress={() =>
+            navigation.navigate("MeetingDetails", { event: nextMeeting })
+          }
           accessibilityRole="button"
           accessibilityLabel={`Próxima orientação: ${nextMeeting.name}`}
-          accessibilityHint="Toque para abrir os detalhes na sua agenda"
+          accessibilityHint="Toque para abrir os detalhes da orientação"
         >
           <MeetingStatusRow>
             <StatusBadge>
@@ -622,9 +624,11 @@ export function Home() {
             {nextMeeting && (
               <SectionLinkButton
                 activeOpacity={0.75}
-                onPress={() => navigation.navigate("Profile")}
+                onPress={() =>
+                  navigation.navigate("MeetingDetails", { event: nextMeeting })
+                }
                 accessibilityRole="button"
-                accessibilityLabel="Ver detalhes na agenda"
+                accessibilityLabel="Ver detalhes da orientação"
               >
                 <SectionLinkText>Ver detalhes</SectionLinkText>
                 <Feather name="arrow-right" size={13} color="#005bb1" />

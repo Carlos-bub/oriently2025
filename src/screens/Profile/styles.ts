@@ -162,7 +162,7 @@ export const SectionCountLabel = styled.Text`
   letter-spacing: 0.6px;
 `;
 
-export const ScheduleCard = styled.View<{
+export const ScheduleCard = styled.TouchableOpacity<{
   isCanceled: boolean;
   isUpcoming: boolean;
   isSpotlight?: boolean;

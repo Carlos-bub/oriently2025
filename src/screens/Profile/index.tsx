@@ -457,6 +457,10 @@ export function Profile() {
         isCanceled={isCanceled}
         isUpcoming={isUpcoming}
         isSpotlight={isSpotlight}
+        activeOpacity={0.86}
+        onPress={() => navigation.navigate("MeetingDetails", { event: item })}
+        accessibilityRole="button"
+        accessibilityLabel={`Abrir detalhes de ${item.name}`}
       >
         {isSpotlight && (
           <SpotlightHeaderRow>

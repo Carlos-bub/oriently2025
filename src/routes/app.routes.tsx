@@ -1,5 +1,6 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useTheme } from "styled-components/native";
 import { Feather } from "@expo/vector-icons";
 import { useRoute } from "@react-navigation/native";
@@ -8,10 +9,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home } from "../screens/Home";
 import { Schedule } from "../screens/Schedule";
 import { Profile } from "../screens/Profile";
+import { MeetingDetails } from "../screens/MeetingDetails";
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
-export function AppRoutes() {
+function MainTabs() {
   const theme = useTheme();
   const route = useRoute();
   const insets = useSafeAreaInsets();
@@ -33,7 +36,13 @@ export function AppRoutes() {
             iconName = "book-open";
           }
 
-          return <Feather name={iconName} size={Math.min(size, 22)} color={color} />;
+          return (
+            <Feather
+              name={iconName}
+              size={Math.min(size, 22)}
+              color={color}
+            />
+          );
         },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.text_secondary,
@@ -90,5 +99,21 @@ export function AppRoutes() {
         }}
       />
     </Tab.Navigator>
+  );
+}
+
+export function AppRoutes() {
+  const route = useRoute();
+  const userParams = route.params || {};
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen
+        name="MainTabs"
+        component={MainTabs}
+        initialParams={userParams}
+      />
+      <Stack.Screen name="MeetingDetails" component={MeetingDetails} />
+    </Stack.Navigator>
   );
 }
