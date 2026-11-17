@@ -13,9 +13,9 @@ import {
   AppState,
 } from "react-native";
 import { useTheme } from "styled-components/native";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { getFriendlyApiErrorMessage } from "../../services/apiClient";
 import {
@@ -37,10 +37,24 @@ import {
   RefreshIconButton,
   Title,
   Subtitle,
+  FilterBarWrapper,
+  FilterSegmentedBar,
+  FilterTabButton,
+  FilterTabLabel,
+  FilterCountPill,
+  FilterCountText,
   SectionHeaderRow,
+  SectionTitleGroup,
   SectionDot,
   SectionHeaderText,
+  SectionCountLabel,
   ScheduleCard,
+  SpotlightHeaderRow,
+  SpotlightBadgesLeft,
+  SpotlightPrimaryPill,
+  SpotlightPrimaryPillText,
+  CountdownPill,
+  CountdownPillText,
   CardRow,
   DateHighlightBox,
   DateHighlightDay,
@@ -57,23 +71,40 @@ import {
   MetaItem,
   MetaText,
   CancelReasonText,
+  CardFooterBar,
+  CardFooterLabel,
+  JoinRoomPill,
+  JoinRoomPillText,
   Divider,
   WarningBanner,
   WarningBannerText,
+  HistoryLinkCard,
+  HistoryLinkText,
+  TipCard,
+  TipIconBox,
+  TipTextCol,
+  TipTitle,
+  TipBody,
   LoadingContainer,
   StateCard,
   StateTitle,
   StateDescription,
   RetryButton,
   RetryButtonText,
+  FloatingNewButton,
+  FloatingNewButtonText,
 } from "./styles";
+
+type FilterTab = "upcoming" | "history";
 
 export function Profile() {
   const theme = useTheme();
+  const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { showDialog } = useDialog();
 
+  const [activeTab, setActiveTab] = useState<FilterTab>("upcoming");
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [cancelingUri, setCancelingUri] = useState<string | null>(null);
@@ -321,6 +352,24 @@ export function Profile() {
     return { day, month };
   };
 
+  const getCountdownLabel = (isoString: string) => {
+    const start = new Date(isoString);
+    const now = new Date();
+    const startDay = new Date(
+      start.getFullYear(),
+      start.getMonth(),
+      start.getDate()
+    );
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffDays = Math.round(
+      (startDay.getTime() - today.getTime()) / 86400000
+    );
+
+    if (diffDays <= 0) return "Hoje";
+    if (diffDays === 1) return "Amanhã";
+    return `Em ${diffDays} dias`;
+  };
+
   const formatTimeAndDuration = (startIso: string, endIso?: string) => {
     const startDate = new Date(startIso);
     const start = startDate.toLocaleTimeString("pt-BR", {
@@ -359,6 +408,20 @@ export function Profile() {
     return null;
   };
 
+  const handleOpenJoinUrl = async (joinUrl?: string) => {
+    if (!joinUrl || !joinUrl.startsWith("https://")) return;
+    try {
+      const supported = await Linking.canOpenURL(joinUrl);
+      if (supported) {
+        await Linking.openURL(joinUrl);
+      }
+    } catch {
+      // ignora silenciosamente se não puder abrir URL externa
+    }
+  };
+
+  const firstUpcomingUri = events.activeEvents[0]?.uri;
+
   const renderEventItem = ({ item }: { item: CalendlyEvent }) => {
     const eventDate = new Date(item.start_time);
     const now = new Date();
@@ -379,14 +442,61 @@ export function Profile() {
 
     const isCanceled = variant === "canceled";
     const isUpcoming = variant === "active";
+    const isSpotlight = isUpcoming && item.uri === firstUpcomingUri;
     const { day, month } = getHighlightedDate(item.start_time);
     const locationLabel = getMeetingLocationLabel(item);
     const isThisCanceling = cancelingUri === item.uri;
+    const hasJoinUrl = Boolean(
+      isUpcoming &&
+        item.location?.join_url &&
+        item.location.join_url.startsWith("https://")
+    );
 
     return (
-      <ScheduleCard isCanceled={isCanceled} isUpcoming={isUpcoming}>
+      <ScheduleCard
+        isCanceled={isCanceled}
+        isUpcoming={isUpcoming}
+        isSpotlight={isSpotlight}
+      >
+        {isSpotlight && (
+          <SpotlightHeaderRow>
+            <SpotlightBadgesLeft>
+              <SpotlightPrimaryPill>
+                <Feather name="star" size={10} color="#FFFFFF" />
+                <SpotlightPrimaryPillText>
+                  Próximo marco
+                </SpotlightPrimaryPillText>
+              </SpotlightPrimaryPill>
+
+              <CountdownPill>
+                <CountdownPillText>
+                  {getCountdownLabel(item.start_time)}
+                </CountdownPillText>
+              </CountdownPill>
+            </SpotlightBadgesLeft>
+
+            <CompactCancelButton
+              activeOpacity={0.75}
+              onPress={() => handleCancelEvent(item)}
+              disabled={cancelingUri !== null}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Cancelar reunião ${item.name}`}
+            >
+              {isThisCanceling ? (
+                <ActivityIndicator size="small" color="#64748b" />
+              ) : (
+                <>
+                  <Feather name="x" size={12} color="#64748b" />
+                  <CompactCancelText>Cancelar</CompactCancelText>
+                </>
+              )}
+            </CompactCancelButton>
+          </SpotlightHeaderRow>
+        )}
+
         <CardRow>
-          <DateHighlightBox isCanceled={isCanceled}>
+          <DateHighlightBox isCanceled={isCanceled} isSpotlight={isSpotlight}>
             <DateHighlightDay isCanceled={isCanceled}>{day}</DateHighlightDay>
             <DateHighlightMonth isCanceled={isCanceled}>
               {month}
@@ -394,41 +504,36 @@ export function Profile() {
           </DateHighlightBox>
 
           <CardDetailsCol>
-            <CardHeaderInline>
-              <StatusBadge variant={variant}>
-                <StatusDot variant={variant} />
-                <StatusBadgeText variant={variant}>
-                  {statusLabel}
-                </StatusBadgeText>
-              </StatusBadge>
+            {!isSpotlight && (
+              <CardHeaderInline>
+                <StatusBadge variant={variant}>
+                  <StatusDot variant={variant} />
+                  <StatusBadgeText variant={variant}>
+                    {statusLabel}
+                  </StatusBadgeText>
+                </StatusBadge>
 
-              {isUpcoming && (
-                <CompactCancelButton
-                  activeOpacity={0.75}
-                  onPress={() => handleCancelEvent(item)}
-                  disabled={cancelingUri !== null}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Cancelar reunião ${item.name}`}
-                >
-                  {isThisCanceling ? (
-                    <ActivityIndicator
-                      size="small"
-                      color={theme.colors.text_secondary}
-                    />
-                  ) : (
-                    <>
-                      <Feather
-                        name="x"
-                        size={12}
-                        color={theme.colors.text_secondary}
-                      />
-                      <CompactCancelText>Cancelar</CompactCancelText>
-                    </>
-                  )}
-                </CompactCancelButton>
-              )}
-            </CardHeaderInline>
+                {isUpcoming && (
+                  <CompactCancelButton
+                    activeOpacity={0.75}
+                    onPress={() => handleCancelEvent(item)}
+                    disabled={cancelingUri !== null}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Cancelar reunião ${item.name}`}
+                  >
+                    {isThisCanceling ? (
+                      <ActivityIndicator size="small" color="#64748b" />
+                    ) : (
+                      <>
+                        <Feather name="x" size={12} color="#64748b" />
+                        <CompactCancelText>Cancelar</CompactCancelText>
+                      </>
+                    )}
+                  </CompactCancelButton>
+                )}
+              </CardHeaderInline>
+            )}
 
             <EventTitle isCanceled={isCanceled} numberOfLines={2}>
               {item.name}
@@ -436,11 +541,7 @@ export function Profile() {
 
             <MetaRow>
               <MetaItem>
-                <Feather
-                  name="clock"
-                  size={12}
-                  color={theme.colors.text_secondary}
-                />
+                <Feather name="clock" size={12} color="#005bb1" />
                 <MetaText>
                   {formatTimeAndDuration(item.start_time, item.end_time)}
                 </MetaText>
@@ -449,13 +550,9 @@ export function Profile() {
               {locationLabel && (
                 <MetaItem>
                   <Feather
-                    name="map-pin"
+                    name={hasJoinUrl ? "video" : "map-pin"}
                     size={12}
-                    color={
-                      isCanceled
-                        ? theme.colors.text_secondary
-                        : theme.colors.lavender
-                    }
+                    color={isCanceled ? "#64748b" : "#514fb5"}
                   />
                   <MetaText numberOfLines={1}>{locationLabel}</MetaText>
                 </MetaItem>
@@ -469,36 +566,75 @@ export function Profile() {
             )}
           </CardDetailsCol>
         </CardRow>
+
+        {isSpotlight && hasJoinUrl && (
+          <CardFooterBar>
+            <CardFooterLabel numberOfLines={1}>
+              {locationLabel || "Sala online disponível"}
+            </CardFooterLabel>
+            <JoinRoomPill
+              activeOpacity={0.85}
+              onPress={() => handleOpenJoinUrl(item.location?.join_url)}
+              accessibilityRole="button"
+              accessibilityLabel="Acessar sala da reunião"
+            >
+              <JoinRoomPillText>Acessar sala</JoinRoomPillText>
+              <Feather name="external-link" size={12} color="#FFFFFF" />
+            </JoinRoomPill>
+          </CardFooterBar>
+        )}
       </ScheduleCard>
     );
   };
+
+  const upcomingCount = events.activeEvents.length;
+  const historyCount = events.pastEvents.length + events.missedEvents.length;
 
   const sections = useMemo(() => {
     const list: {
       title: string;
       isUpcoming?: boolean;
+      countLabel?: string;
       data: CalendlyEvent[];
     }[] = [];
-    if (events.activeEvents.length > 0) {
+
+    if (activeTab === "upcoming") {
+      if (events.activeEvents.length > 0) {
+        list.push({
+          title: "Próximas orientações",
+          isUpcoming: true,
+          countLabel: `${events.activeEvents.length} ${
+            events.activeEvents.length === 1 ? "ativa" : "ativas"
+          }`,
+          data: events.activeEvents,
+        });
+      }
+      return list;
+    }
+
+    if (events.pastEvents.length > 0) {
       list.push({
-        title: "Próximas orientações",
-        isUpcoming: true,
-        data: events.activeEvents,
+        title: "Realizadas",
+        countLabel: `${events.pastEvents.length}`,
+        data: events.pastEvents,
       });
     }
-    if (events.pastEvents.length > 0) {
-      list.push({ title: "Realizadas", data: events.pastEvents });
-    }
     if (events.missedEvents.length > 0) {
-      list.push({ title: "Canceladas", data: events.missedEvents });
+      list.push({
+        title: "Canceladas",
+        countLabel: `${events.missedEvents.length}`,
+        data: events.missedEvents,
+      });
     }
     return list;
-  }, [events]);
+  }, [activeTab, events]);
 
   const hasNoEvents =
     !events.activeEvents.length &&
     !events.pastEvents.length &&
     !events.missedEvents.length;
+
+  const isCurrentTabEmpty = sections.length === 0;
 
   if (loading && hasNoEvents && !eventsError) {
     return (
@@ -513,12 +649,8 @@ export function Profile() {
       <Header topInset={insets.top}>
         <HeaderTopRow>
           <HeaderTag>
-            <Feather
-              name="compass"
-              size={11}
-              color={theme.colors.primary_dark}
-            />
-            <HeaderTagText>Orientação TCC</HeaderTagText>
+            <Feather name="compass" size={11} color="#005bb1" />
+            <HeaderTagText>Trilha TCC</HeaderTagText>
           </HeaderTag>
 
           <RefreshIconButton
@@ -528,19 +660,55 @@ export function Profile() {
             accessibilityRole="button"
             accessibilityLabel="Atualizar agendamentos"
           >
-            <Feather
-              name="refresh-cw"
-              size={15}
-              color={theme.colors.primary_dark}
-            />
+            <Feather name="refresh-cw" size={15} color="#005bb1" />
           </RefreshIconButton>
         </HeaderTopRow>
 
         <Title>Meus agendamentos</Title>
         <Subtitle>
-          Acompanhe suas próximas orientações e seu histórico.
+          Acompanhe suas próximas orientações e marcos do seu trabalho.
         </Subtitle>
       </Header>
+
+      <FilterBarWrapper>
+        <FilterSegmentedBar>
+          <FilterTabButton
+            active={activeTab === "upcoming"}
+            activeOpacity={0.85}
+            onPress={() => setActiveTab("upcoming")}
+            accessibilityRole="button"
+            accessibilityLabel="Filtrar próximas orientações"
+            accessibilityState={{ selected: activeTab === "upcoming" }}
+          >
+            <FilterTabLabel active={activeTab === "upcoming"}>
+              Próximas
+            </FilterTabLabel>
+            <FilterCountPill active={activeTab === "upcoming"}>
+              <FilterCountText active={activeTab === "upcoming"}>
+                {upcomingCount}
+              </FilterCountText>
+            </FilterCountPill>
+          </FilterTabButton>
+
+          <FilterTabButton
+            active={activeTab === "history"}
+            activeOpacity={0.85}
+            onPress={() => setActiveTab("history")}
+            accessibilityRole="button"
+            accessibilityLabel="Filtrar histórico de orientações"
+            accessibilityState={{ selected: activeTab === "history" }}
+          >
+            <FilterTabLabel active={activeTab === "history"}>
+              Histórico
+            </FilterTabLabel>
+            <FilterCountPill active={activeTab === "history"}>
+              <FilterCountText active={activeTab === "history"}>
+                {historyCount}
+              </FilterCountText>
+            </FilterCountPill>
+          </FilterTabButton>
+        </FilterSegmentedBar>
+      </FilterBarWrapper>
 
       <SectionList
         sections={sections}
@@ -548,17 +716,22 @@ export function Profile() {
         renderItem={renderEventItem}
         renderSectionHeader={({ section }) => (
           <SectionHeaderRow>
-            <SectionDot isUpcoming={section.isUpcoming} />
-            <SectionHeaderText isUpcoming={section.isUpcoming}>
-              {section.title}
-            </SectionHeaderText>
+            <SectionTitleGroup>
+              <SectionDot isUpcoming={section.isUpcoming} />
+              <SectionHeaderText isUpcoming={section.isUpcoming}>
+                {section.title}
+              </SectionHeaderText>
+            </SectionTitleGroup>
+            {section.countLabel && (
+              <SectionCountLabel>{section.countLabel}</SectionCountLabel>
+            )}
           </SectionHeaderRow>
         )}
         ItemSeparatorComponent={() => <Divider />}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingBottom: Math.max(insets.bottom, 16) + 84,
-          flexGrow: hasNoEvents ? 1 : 0,
+          paddingBottom: Math.max(insets.bottom, 16) + 144,
+          flexGrow: isCurrentTabEmpty ? 1 : 0,
         }}
         stickySectionHeadersEnabled={false}
         showsVerticalScrollIndicator={false}
@@ -572,13 +745,45 @@ export function Profile() {
         ListHeaderComponent={
           partialWarning && !hasNoEvents ? (
             <WarningBanner>
-              <Feather
-                name="info"
-                size={15}
-                color={theme.colors.primary_dark}
-              />
+              <Feather name="info" size={15} color="#005bb1" />
               <WarningBannerText>{partialWarning}</WarningBannerText>
             </WarningBanner>
+          ) : null
+        }
+        ListFooterComponent={
+          activeTab === "upcoming" ? (
+            <>
+              {historyCount > 0 && (
+                <HistoryLinkCard
+                  activeOpacity={0.82}
+                  onPress={() => setActiveTab("history")}
+                  accessibilityRole="button"
+                  accessibilityLabel="Visualizar histórico de reuniões concluídas ou canceladas"
+                >
+                  <HistoryLinkText>
+                    Visualizar histórico de reuniões concluídas ou canceladas
+                  </HistoryLinkText>
+                  <Feather name="arrow-right" size={16} color="#005bb1" />
+                </HistoryLinkCard>
+              )}
+
+              <TipCard>
+                <TipIconBox>
+                  <MaterialCommunityIcons
+                    name="lightbulb-outline"
+                    size={19}
+                    color="#FFFFFF"
+                  />
+                </TipIconBox>
+                <TipTextCol>
+                  <TipTitle>Dica para sua orientação</TipTitle>
+                  <TipBody>
+                    Organize suas dúvidas e avanços antes da reunião para
+                    aproveitar melhor o encontro.
+                  </TipBody>
+                </TipTextCol>
+              </TipCard>
+            </>
           ) : null
         }
         ListEmptyComponent={
@@ -596,7 +801,7 @@ export function Profile() {
                 eventsError
                   ? "#DC2626"
                   : partialWarning
-                    ? theme.colors.primary_dark
+                    ? "#005bb1"
                     : theme.colors.primary
               }
             />
@@ -605,12 +810,16 @@ export function Profile() {
                 ? "Não foi possível carregar"
                 : partialWarning
                   ? "Agenda carregada parcialmente"
-                  : "Nenhum agendamento encontrado"}
+                  : activeTab === "upcoming"
+                    ? "Nenhuma orientação próxima"
+                    : "Nenhum registro no histórico"}
             </StateTitle>
             <StateDescription>
               {eventsError ||
                 partialWarning ||
-                "Suas futuras orientações, reuniões realizadas e canceladas aparecerão aqui."}
+                (activeTab === "upcoming"
+                  ? "Agende uma nova reunião para acompanhar seus próximos marcos aqui."
+                  : "Reuniões realizadas ou canceladas aparecerão nesta aba.")}
             </StateDescription>
             {(eventsError || partialWarning) && (
               <RetryButton
@@ -625,6 +834,17 @@ export function Profile() {
           </StateCard>
         }
       />
+
+      <FloatingNewButton
+        bottomOffset={Math.max(insets.bottom, 12) + 74}
+        activeOpacity={0.88}
+        onPress={() => navigation.navigate("Schedule")}
+        accessibilityRole="button"
+        accessibilityLabel="Nova orientação"
+      >
+        <Feather name="plus" size={16} color="#FFFFFF" />
+        <FloatingNewButtonText>Nova orientação</FloatingNewButtonText>
+      </FloatingNewButton>
     </Container>
   );
 }
