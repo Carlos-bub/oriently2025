@@ -178,6 +178,20 @@ export function LoginScreen() {
   };
 
   const handleGoogleSignIn = async () => {
+    const googleWebClientId = (
+      process.env as Record<string, string | undefined>
+    ).EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim();
+
+    if (!googleWebClientId) {
+      showDialog({
+        variant: "warning",
+        title: "Login Google não configurado",
+        message:
+          "Este build de demonstração não possui credenciais OAuth configuradas. Toque em 'Explorar modo demo' para testar o aplicativo.",
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 

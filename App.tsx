@@ -4,9 +4,8 @@ import { ThemeProvider } from "styled-components/native";
 import * as SplashScreen from "expo-splash-screen";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
-//Fontes
 import {
   useFonts,
   Roboto_400Regular,
@@ -23,36 +22,31 @@ import {
   Poppins_700Bold,
 } from "@expo-google-fonts/poppins";
 
-//Componentes
 import { Loading } from "./src/components/Loading";
 import theme from "./src/global/styles/theme";
 import { DialogProvider } from "./src/contexts/DialogContext";
 import { AuthContextProvider } from "./src/contexts/AuthContext";
 import { Routes } from "./src/routes";
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const googleWebClientId = (
   process.env as Record<string, string | undefined>
-).EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+).EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim();
 
-GoogleSignin.configure({
-  webClientId: googleWebClientId, 
-  offlineAccess: true,
-  forceCodeForRefreshToken: true, 
-  iosClientId: '', // implementação Futura
-});
-
-async function checkGoogleSignin() {
-  try {
-    await GoogleSignin.hasPlayServices();
-    console.log('GoogleSignin: Play Services disponíveis');
-  } catch (error) {
-    console.error('Erro ao verificar GoogleSignin:', error);
+try {
+  if (googleWebClientId) {
+    GoogleSignin.configure({
+      webClientId: googleWebClientId,
+      offlineAccess: true,
+      forceCodeForRefreshToken: true,
+    });
+  } else {
+    GoogleSignin.configure();
   }
+} catch (configError) {
+  console.warn("GoogleSignin.configure fallback:", configError);
 }
-
-checkGoogleSignin();
 
 export default function App() {
   const [loaded, error] = useFonts({
@@ -66,13 +60,32 @@ export default function App() {
     Poppins_700Bold,
   });
 
-  const onLayoutRootView = useCallback(async () => {
-    if (loaded) {
-      await SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+  useEffect(() => {
+    GoogleSignin.hasPlayServices().catch((playServicesError) => {
+      console.warn("Google Play Services indisponível:", playServicesError);
+    });
+  }, []);
 
-  if (!loaded) {
+  useEffect(() => {
+    if (loaded || error) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [loaded, error]);
+
+  useEffect(() => {
+    const fallbackTimer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 1500);
+    return () => clearTimeout(fallbackTimer);
+  }, []);
+
+  const onLayoutRootView = useCallback(async () => {
+    if (loaded || error) {
+      await SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [loaded, error]);
+
+  if (!loaded && !error) {
     return <Loading />;
   }
 
